@@ -53,6 +53,10 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     )
 }
 
+/**
+ * Main composable function for the UI layout
+ * @param modifier Modifier for layout adjustments
+ */
 @Composable
 fun FirstUI(modifier: Modifier = Modifier) {
     // TODO 1: Create state variables for text input and items list
@@ -73,6 +77,14 @@ fun FirstUI(modifier: Modifier = Modifier) {
         CardsList(emptyList())
     }
 }
+
+/**
+ * Composable for search and input controls
+ * @param textValue Current value of the input field
+ * @param onTextValueChange Callback for text changes
+ * @param onAddItem Callback for adding new items
+ * @param onSearch Callback for performing search
+ */
 
 @Composable
 fun SearchInputBar(
@@ -106,6 +118,10 @@ fun SearchInputBar(
     }
 }
 
+/**
+ * Composable for displaying a list of items in cards
+ * @param displayedItems List of items to display
+ */
 @Composable
 fun CardsList(displayedItems: List<String>) {
     // TODO 9: Implement LazyColumn to display items
