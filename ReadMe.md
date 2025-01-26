@@ -1,7 +1,7 @@
 # 🌱 Khadra - Volunteer Plant Irrigation App
 
-[![Kotlin Version](https://img.shields.io/badge/Kotlin-1.9.0-blue.svg)](https://kotlinlang.org)
-[![Compose Version](https://img.shields.io/badge/Jetpack%20Compose-1.5.0-brightgreen)](https://developer.android.com/jetpack/compose)
+[![Kotlin Version](https://img.shields.io/badge/Kotlin-2.0.0-blue.svg)](https://kotlinlang.org)
+[![Compose Version](https://img.shields.io/badge/Jetpack%20Compose-1.10.0-brightgreen)](https://developer.android.com/jetpack/compose)
 
 Khadra is an Android application that connects volunteers with plant irrigation opportunities, enabling community-driven plant care through scheduling and tracking of watering activities.
 
@@ -26,12 +26,12 @@ Khadra is an Android application that connects volunteers with plant irrigation 
 ### Prerequisites
 - Android Studio Ladybug Feature Drop (2024.2.2)
 - Android SDK 33+
-- Kotlin 1.9.0
+- Kotlin 2.0.0
 
 ### Steps
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/khadra.git
+   git clone https://github.com/AmaraNecib/Khadra.git
    ```
 2. **Open in Android Studio**
     - Select "Open an Existing Project"
@@ -45,6 +45,9 @@ Khadra is an Android application that connects volunteers with plant irrigation 
 
 #### Firebase Setup (if applicable)
 not yet
+
+#### TPs
+You can see the `TPs` folder for the tasks description.
 
 ## Contributing 🤝
 We welcome contributions! Please follow these guidelines:
