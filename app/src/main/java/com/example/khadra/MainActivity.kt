@@ -36,13 +36,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             KhadraTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    // Call the UI composable function here
-                    FirstUI(modifier = Modifier.padding(innerPadding))
+                    // TODO 0: Call the UI composable function
+                    //FirstUI(modifier = Modifier.padding(innerPadding))
+                    Greeting(name = "Amara", modifier = Modifier.padding(innerPadding))
                 }
             }
         }
     }
-
 }
 
 @Composable
@@ -53,19 +53,13 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     )
 }
 
-
-
+/**
+ * Main composable function for the UI layout
+ * @param modifier Modifier for layout adjustments
+ */
 @Composable
 fun FirstUI(modifier: Modifier = Modifier) {
-    var textValue by remember { mutableStateOf("") }
-    val allItems = remember { mutableStateListOf<String>() }
-    var searchQuery by remember { mutableStateOf("") }
-
-    val displayedItems = if (searchQuery.isEmpty()) {
-        allItems
-    } else {
-        allItems.filter { it.contains(searchQuery, ignoreCase = true) }
-    }
+    // TODO 1: Create state variables for text input and items list
 
     Column(
         modifier = modifier
@@ -73,58 +67,24 @@ fun FirstUI(modifier: Modifier = Modifier) {
             .fillMaxSize()
     ) {
         SearchInputBar(
-            textValue = textValue,
-            onTextValueChange = { textValue = it },
-            onAddItem = {
-                if (textValue.isNotBlank()) {
-                    allItems.add(textValue)
-                    textValue = ""
-                }
-            },
-            onSearch = { searchQuery = it }
+            textValue = "", // TODO 2: Connect to state
+            onTextValueChange = { /* TODO 3: Update text state */ },
+            onAddItem = { /* TODO 4: Add item to list */ },
+            onSearch = { /* TODO 5: Implement search functionality */ }
         )
 
-        if (displayedItems.isEmpty()) {
-            Text("No items found", modifier = Modifier.padding(16.dp))
-        }
-
-        CardsList(
-            displayedItems = displayedItems,
-            onDeleteItem = { item ->
-                allItems.remove(item)
-            }
-        )
+        // TODO 6: Display list of items using CardsList composable
+        CardsList(emptyList())
     }
 }
 
-@Composable
-fun CardsList(displayedItems: List<String>, onDeleteItem: (String) -> Unit) {
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        items(displayedItems) { item ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(text = item)
-
-                    Button(onClick = { onDeleteItem(item) }) {
-                        Text("Delete")
-                    }
-                }
-            }
-        }
-    }
-}
-
-
+/**
+ * Composable for search and input controls
+ * @param textValue Current value of the input field
+ * @param onTextValueChange Callback for text changes
+ * @param onAddItem Callback for adding new items
+ * @param onSearch Callback for performing search
+ */
 
 @Composable
 fun SearchInputBar(
@@ -147,18 +107,35 @@ fun SearchInputBar(
                 .padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Button(onClick = { onAddItem(textValue) }) {
+            Button(onClick = { /* TODO 7: Handle add button click */ }) {
                 Text("Add")
             }
 
-            Button(onClick = { onSearch(textValue) }) {
+            Button(onClick = { /* TODO 8: Handle search button click */ }) {
                 Text("Search")
             }
         }
     }
 }
 
-
-
-
-
+/**
+ * Composable for displaying a list of items in cards
+ * @param displayedItems List of items to display
+ */
+@Composable
+fun CardsList(displayedItems: List<String>) {
+    // TODO 9: Implement LazyColumn to display items
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        // TODO 10: Create cards for each item in the list
+        items(displayedItems) { item ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Text(text = "Sample Item", modifier = Modifier.padding(16.dp))
+            }
+        }
+    }
+}
