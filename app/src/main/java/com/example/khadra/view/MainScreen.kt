@@ -153,7 +153,8 @@ fun HomeScreen(modifier: Modifier) {
             .fillMaxSize()
             .padding(top = 140.dp),
     ) {
-        var textValue by remember { mutableStateOf("") }
+        Column {
+            var textValue by remember { mutableStateOf("") }
             // Search Bar (TextField)
             OutlinedTextField(
                 value = textValue,
@@ -183,6 +184,20 @@ fun HomeScreen(modifier: Modifier) {
 
                 })
             )
+
+            Spacer(modifier = Modifier.height(10.dp))
+            Box (modifier=Modifier.fillMaxWidth().padding(horizontal =6.dp ), contentAlignment = Alignment.CenterEnd){
+                Text(":الأشجار المغروسة", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Box()
+
+
+        }
+
 
     }
 }
