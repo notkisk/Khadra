@@ -141,10 +141,54 @@ object TreeRepository {
             Tree(
                 id = "13",
                 name = "Dates Tree",
-                type = "Ornamental",
+                type = "Palm",
                 status = "Moderate",
                 coordinates = Pair(34.0522, -118.2437),
                 urlImage = "https://images.pexels.com/photos/10067548/pexels-photo-10067548.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
+                lastIrrigationAction = Date(),
+                createdAt = Date(),
+                updatedAt = Date()
+            ),
+            Tree(
+                id = "14",
+                name = "Coconut Tree",
+                type = "Palm",
+                status = "Healthy",
+                coordinates = Pair(34.0522, -118.2437),
+                urlImage = "https://images.pexels.com/photos/1979261/pexels-photo-1979261.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
+                lastIrrigationAction = Date(),
+                createdAt = Date(),
+                updatedAt = Date()
+            ),
+            Tree(
+                id = "15",
+                name = "Tomato Tree",
+                type = "Vegetable",
+                status = "Critical",
+                coordinates = Pair(34.0522, -118.2437),
+                urlImage = "https://i.etsystatic.com/35716232/r/il/359303/5328159719/il_570xN.5328159719_ewyf.jpg",
+                lastIrrigationAction = Date(),
+                createdAt = Date(),
+                updatedAt = Date()
+            ),
+            Tree(
+                id = "16",
+                name = "Parwal Tree",
+                type = "Vegetable",
+                status = "Moderate",
+                coordinates = Pair(34.0522, -118.2437),
+                urlImage = "https://m.media-amazon.com/images/I/71xVQ-wZ9WL._AC_UF1000,1000_QL80_.jpg",
+                lastIrrigationAction = Date(),
+                createdAt = Date(),
+                updatedAt = Date()
+            ),
+            Tree(
+                id = "17",
+                name = "Moringa Tree",
+                type = "Vegetable",
+                status = "Moderate",
+                coordinates = Pair(34.0522, -118.2437),
+                urlImage = "https://images.pexels.com/photos/1313431/pexels-photo-1313431.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
                 lastIrrigationAction = Date(),
                 createdAt = Date(),
                 updatedAt = Date()
