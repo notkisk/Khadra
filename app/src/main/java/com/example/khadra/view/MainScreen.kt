@@ -1,10 +1,13 @@
 package com.example.khadra.view
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -23,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -33,6 +37,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.example.khadra.R
 import com.example.khadra.model.NavItem
 import com.example.khadra.ui.theme.Inter
@@ -54,6 +62,8 @@ fun MainScreen(
         NavItem("Irrigation", painterResource(R.drawable.ic_water_drop)),
         NavItem("Home", painterResource(R.drawable.ic_outline_home_24))
     )
+
+
 
     var selectedIndex by remember { mutableIntStateOf(4) } // Default screen is Home
     val mod = modifier.fillMaxWidth()
@@ -137,24 +147,33 @@ fun ContentScreen(modifier: Modifier = Modifier, selectedIndex: Int, treeViewMod
         1 -> MapScreen()
         2 -> AddScreen()
         3 -> IrrigationScreen()
-        4 -> HomeScreen(modifier) // ✅ Fixed: No infinite recursion
+        4 -> HomeScreen(modifier,treeViewModel) // ✅ Fixed: No infinite recursion
     }
 }
 //hell
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(modifier: Modifier) {
+fun HomeScreen(modifier: Modifier,treeViewModel: TreeViewModel) {
+
+    val uiState by treeViewModel.uiState.collectAsState()
+    val treesList = uiState.trees
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredTrees = treesList.filter { tree ->
+        tree.name.contains(searchQuery, ignoreCase = true)
+                ||
+                tree.id.equals(searchQuery)
+                ||tree.type.contains(searchQuery, ignoreCase = true)||tree.status.contains(searchQuery, ignoreCase = true)// Case-insensitive search
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
             .padding(top = 140.dp),
     ) {
         Column {
-            var textValue by remember { mutableStateOf("") }
             // Search Bar (TextField)
             OutlinedTextField(
-                value = textValue,
-                onValueChange = { searchQuery -> textValue = searchQuery },
+                value = searchQuery,
+                onValueChange = { sq -> searchQuery = sq },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp),
                 shape = RoundedCornerShape(32.dp), // ✅ Matches Box clipping
                 singleLine = true,
@@ -209,11 +228,56 @@ fun HomeScreen(modifier: Modifier) {
 
                 }
             }*/
+            if(uiState.isLoading){
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize().padding(bottom = 80.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+
+                        CircularProgressIndicator(
+                            color = Color.Gray, // Customize the color
+                            modifier = Modifier.size(100.dp) // Set the size of the loader
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Text(text = "Loading...", fontSize = 24.sp, fontWeight = FontWeight.Light, color = Color.Gray)
+
+                    }
+
+                }
+            }else{
+                if(searchQuery.isNotEmpty() && filteredTrees.isNotEmpty()){
+                    LazyColumn (modifier = Modifier.fillMaxSize().padding(bottom = 110.dp)){items(filteredTrees){tree->
+                        TreeCard(tree.name,tree.status,tree.urlImage)
+                        Spacer(Modifier.height(12.dp))
+
+                    }
+                }
+            }else if (filteredTrees.isEmpty()){
+                Column (modifier=Modifier.fillMaxSize().padding(bottom = 100.dp),verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally){
+
+                    Image(modifier = Modifier.size(80.dp),painter = painterResource(R.drawable.ic_error), contentDescription = "Error")
+                    Spacer(modifier=Modifier.height(8.dp))
+                    Text(text = "No Results Found!", fontSize = 32.sp, fontWeight = FontWeight.Light, color = Color.Gray)
 
 
-            TreeCard("healthy")
-            Spacer(Modifier.height(16.dp))
-            TreeCard("low")
+                }
+
+                }else{
+                    LazyColumn (modifier = Modifier.fillMaxSize().padding(bottom = 110.dp)){items(treesList){tree->
+                        TreeCard(tree.name,tree.status,tree.urlImage)
+                        Spacer(Modifier.height(12.dp))
+
+                    }
+                    }
+                }
+
+
+            }
+
+
+
         }
 
 
@@ -297,7 +361,7 @@ fun PreviewMainScreen() {
 
 
 @Composable
-fun TreeCard(status:String="healthy") {
+fun TreeCard(treeName:String,status:String="healthy",imageUrl:String="") {
 
     Surface( modifier = Modifier.wrapContentSize().padding(horizontal = 16.dp)
         .shadow(
@@ -342,7 +406,7 @@ fun TreeCard(status:String="healthy") {
                         Spacer(modifier = Modifier.height(8.dp))
                         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd){
                             Text(
-                                text = "شجرة زيتون الاخضر",
+                                text = treeName,
                                 fontSize = 20.sp,
                                 color = Color.Black, fontWeight = FontWeight.ExtraBold, lineHeight = 2.sp
                             )
@@ -393,6 +457,7 @@ fun TreeCard(status:String="healthy") {
                         }
                     }
                 }
+                val localContext = LocalContext.current
 
                 // Space 3 (25%)
                 Box(
@@ -401,13 +466,13 @@ fun TreeCard(status:String="healthy") {
                         .aspectRatio(1f) // Enforce 1:1 aspect ratio for the Box
                         .wrapContentSize() // Make the Box wrap around the content
                         .padding(8.dp)
-                        .border(1.dp, color = Color.Black.copy(alpha = 0.25f), shape = RoundedCornerShape(20.dp))
+                        .border(2.dp, color = Color.Black.copy(alpha = 0.25f), shape = RoundedCornerShape(20.dp))
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.tree1), // Replace with your image resource
+                    AsyncImage(
+                        model =imageUrl, // Replace with your image resource
                         contentDescription = "Image 2",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Fit // Ensures the image fits inside the Box
+                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)), // Apply rounded corners,
+                        contentScale = ContentScale.Crop // Ensures the image fits inside the Box
                     )
                 }
             }
@@ -420,16 +485,18 @@ fun TreeCard(status:String="healthy") {
 
 @Composable
 fun StatusBar(status: String) {
-    val color = when (status.lowercase()) { // Convert to lowercase for case-insensitive comparison
-        "low" -> Color(0xFFFF0000)
-        "moderate" -> Color(0xFFFFAA00)
+    val color = when (status.lowercase()) {
+        "critical"->Color(0xFFFF0000)// Convert to lowercase for case-insensitive comparison
+        "low" -> Color(0xFFFF6F00)
+        "moderate" -> Color(0xFFFFDD00)
         "healthy" -> KhadraGreen
         else -> Color.Gray // Default color for unknown status
     }
 
-    val progress = when (status.lowercase()) { // Convert to lowercase for case-insensitive comparison
-        "low" -> 25
-        "moderate" -> 40
+    val progress = when (status.lowercase()) {
+        "critical" -> 20
+        "low" -> 30
+        "moderate" -> 45
         "healthy" -> 60
         else -> 60 // Default color for unknown status
     }
