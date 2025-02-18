@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -36,6 +37,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -43,6 +45,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.khadra.R
 import com.example.khadra.model.NavItem
+import com.example.khadra.model.Tree
 import com.example.khadra.ui.theme.Inter
 import com.example.khadra.ui.theme.KhadraGreen
 import com.example.khadra.ui.theme.KhadraTheme
@@ -153,17 +156,27 @@ fun ContentScreen(modifier: Modifier = Modifier, selectedIndex: Int, treeViewMod
 //hell
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(modifier: Modifier,treeViewModel: TreeViewModel) {
-
+fun HomeScreen(modifier: Modifier, treeViewModel: TreeViewModel) {
     val uiState by treeViewModel.uiState.collectAsState()
     val treesList = uiState.trees
     var searchQuery by remember { mutableStateOf("") }
     val filteredTrees = treesList.filter { tree ->
-        tree.name.contains(searchQuery, ignoreCase = true)
-                ||
-                tree.id.equals(searchQuery)
-                ||tree.type.contains(searchQuery, ignoreCase = true)||tree.status.contains(searchQuery, ignoreCase = true)||tree.type.contains(searchQuery, ignoreCase = true)// Case-insensitive search
+        tree.name.contains(searchQuery, ignoreCase = true) ||
+                tree.id.equals(searchQuery) ||
+                tree.type.contains(searchQuery, ignoreCase = true) ||
+                tree.status.contains(searchQuery, ignoreCase = true)
     }
+
+    // State to track the selected tree
+    var selectedTree by remember { mutableStateOf<Tree?>(null) }
+
+    // Show Tree Details Dialog or Screen if a tree is selected
+    selectedTree?.let { tree ->
+        TreeDetailsDialog(tree = tree) {
+            selectedTree = null // Close the details dialog or screen
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -175,7 +188,7 @@ fun HomeScreen(modifier: Modifier,treeViewModel: TreeViewModel) {
                 value = searchQuery,
                 onValueChange = { sq -> searchQuery = sq },
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp),
-                shape = RoundedCornerShape(32.dp), // ✅ Matches Box clipping
+                shape = RoundedCornerShape(32.dp), // Matches Box clipping
                 singleLine = true,
                 placeholder = { Text("Search...", fontSize = 16.sp, color = Color.Black) },
                 trailingIcon = {
@@ -187,7 +200,7 @@ fun HomeScreen(modifier: Modifier,treeViewModel: TreeViewModel) {
                     )
                 },
                 colors = TextFieldDefaults.textFieldColors(
-                    containerColor = Color.Transparent, // ✅ Transparent so image is visible
+                    containerColor = Color.Transparent, // Transparent for image visibility
                     focusedIndicatorColor = Color.Gray,
                     unfocusedIndicatorColor = Color.Gray
                 ),
@@ -195,94 +208,79 @@ fun HomeScreen(modifier: Modifier,treeViewModel: TreeViewModel) {
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Search
                 ),
-                keyboardActions = KeyboardActions(onSearch = {
-
-                })
+                keyboardActions = KeyboardActions(onSearch = {})
             )
 
             Spacer(modifier = Modifier.height(10.dp))
-            Box (modifier=Modifier.fillMaxWidth().padding(horizontal =6.dp ), contentAlignment = Alignment.CenterEnd){
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp), contentAlignment = Alignment.CenterEnd) {
                 Text(":الأشجار المغروسة", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-          /*  Card(
-                modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(4.dp),
-                shape = RoundedCornerShape(8.dp), colors = CardColors(containerColor = Color.White
-                    , contentColor = Color.Black, disabledContentColor = Color.White, disabledContainerColor = Color.White)
-            ) {
-                Row () {
-                    Box(modifier = Modifier.weight(0.25f).height(100.dp).border(1.5.dp, color = Color.Black.copy(alpha = 0.25f), shape = RoundedCornerShape(9.dp))){
-
-                    }
-
-                    Box(modifier = Modifier.weight(0.5f).height(100.dp)){
-
-                    }
-                    Box(modifier = Modifier.weight(0.25f).height(100.dp)){
-
-                    }
-
-                }
-            }*/
-            if(uiState.isLoading){
+            // Loading State
+            if (uiState.isLoading) {
                 Box(
                     modifier = Modifier
-                        .fillMaxSize().padding(bottom = 80.dp),
+                        .fillMaxSize()
+                        .padding(bottom = 80.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-
-                        CircularProgressIndicator(
-                            color = Color.Gray, // Customize the color
-                            modifier = Modifier.size(100.dp) // Set the size of the loader
-                        )
+                        CircularProgressIndicator(color = Color.Gray, modifier = Modifier.size(100.dp))
                         Spacer(Modifier.height(10.dp))
                         Text(text = "Loading...", fontSize = 24.sp, fontWeight = FontWeight.Light, color = Color.Gray)
-
-                    }
-
-                }
-            }else{
-                if(searchQuery.isNotEmpty() && filteredTrees.isNotEmpty()){
-                    LazyColumn (modifier = Modifier.fillMaxSize().padding(bottom = 110.dp)){items(filteredTrees){tree->
-                        TreeCard(tree.name,tree.status,tree.urlImage)
-                        Spacer(Modifier.height(12.dp))
-
                     }
                 }
-            }else if (filteredTrees.isEmpty()){
-                Column (modifier=Modifier.fillMaxSize().padding(bottom = 100.dp),verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally){
-
-                    Image(modifier = Modifier.size(80.dp),painter = painterResource(R.drawable.ic_error), contentDescription = "Error")
-                    Spacer(modifier=Modifier.height(8.dp))
-                    Text(text = "No Results Found!", fontSize = 32.sp, fontWeight = FontWeight.Light, color = Color.Gray)
-
-
-                }
-
-                }else{
-                    LazyColumn (modifier = Modifier.fillMaxSize().padding(bottom = 110.dp)){items(treesList){tree->
-                        TreeCard(tree.name,tree.status,tree.urlImage)
-                        Spacer(Modifier.height(12.dp))
-
+            } else {
+                if (searchQuery.isNotEmpty() && filteredTrees.isNotEmpty()) {
+                    LazyColumn(modifier = Modifier.fillMaxSize().padding(bottom = 110.dp)) {
+                        items(filteredTrees) { tree ->
+                            TreeCard(tree = tree, onCardClick = { selectedTree = it }) // Pass tree and click handler
+                            Spacer(Modifier.height(12.dp))
+                        }
                     }
+                } else if (filteredTrees.isEmpty()) {
+                    Column(modifier = Modifier.fillMaxSize().padding(bottom = 100.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                        Image(modifier = Modifier.size(80.dp), painter = painterResource(R.drawable.ic_error), contentDescription = "Error")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = "No Results Found!", fontSize = 32.sp, fontWeight = FontWeight.Light, color = Color.Gray)
+                    }
+                } else {
+                    LazyColumn(modifier = Modifier.fillMaxSize().padding(bottom = 110.dp)) {
+                        items(treesList) { tree ->
+                            TreeCard(tree = tree, onCardClick = { selectedTree = it }) // Pass tree and click handler
+                            Spacer(Modifier.height(12.dp))
+                        }
                     }
                 }
-
-
             }
-
-
-
         }
-
-
     }
 }
+@Composable
+fun TreeDetailsDialog(tree: Tree, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Tree Details") },
+        text = {
+            Column {
+                Text("Tree Name: ${tree.name}")
+                Text("Status: ${tree.status}")
+                Text("Type: ${tree.type}")
+                Text("Location: ${tree.coordinates.first}, ${tree.coordinates.second}")
+                Text("Last Irrigation: ${tree.lastIrrigationAction}")
+                // Add more fields as needed
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
+            }
+        }
+    )
+}
+
 
 
 @Composable
@@ -361,63 +359,73 @@ fun PreviewMainScreen() {
 
 
 @Composable
-fun TreeCard(treeName:String,status:String="healthy",imageUrl:String="") {
+fun TreeCard(tree: Tree, onCardClick: (Tree) -> Unit) {
 
-    Surface( modifier = Modifier.wrapContentSize().padding(horizontal = 16.dp)
-        .shadow(
-            elevation = 6.dp, // Shadow elevation
-            shape = RoundedCornerShape(10.dp),
-            clip = true, // Clip the shadow to the shape
-        ), shape = RoundedCornerShape(10.dp))
-    {
+    Surface(
+        modifier = Modifier
+            .clickable { onCardClick(tree) }
+            .wrapContentSize()
+            .padding(horizontal = 16.dp)
+            .shadow(
+                elevation = 6.dp, // Shadow elevation
+                shape = RoundedCornerShape(10.dp),
+                clip = true, // Clip the shadow to the shape
+            ),
+        shape = RoundedCornerShape(10.dp)
+    ) {
         Card(
-
             border = BorderStroke(1.dp, color = Color.Black.copy(alpha = 0.25f)),
-            shape = RoundedCornerShape(9.dp), colors = CardColors(containerColor = Color(0x00FFFFFF)
-                , contentColor = Color(0xFFFFFFFF), disabledContentColor = Color.White, disabledContainerColor = Color.White)
+            shape = RoundedCornerShape(9.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0x00FFFFFF))
         ) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 // Space 1 (25%)
-                Box(modifier = Modifier.weight(0.25f).height(100.dp).border(1.dp, color = Color.Black.copy(alpha = 0.25f), shape = RoundedCornerShape(9.dp))){
-                    Column (modifier = Modifier.fillMaxHeight(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally){
+                Box(
+                    modifier = Modifier
+                        .weight(0.25f)
+                        .height(100.dp)
+                        .border(1.dp, color = Color.Black.copy(alpha = 0.25f), shape = RoundedCornerShape(9.dp))
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxHeight(),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text(
                             text = ":الحالة ",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Black,
-                            modifier = Modifier
-                                .zIndex(100f).fillMaxWidth().align(Alignment.End),
+                            modifier = Modifier.zIndex(100f).fillMaxWidth().align(Alignment.End),
                             textAlign = TextAlign.Center // Ensures text alignment within its own bounds
                         )
-
-                        StatusBar(status)
-
+                        StatusBar(tree.status) // Assuming this is a custom composable for showing the status
                     }
-
-
                 }
 
                 // Space 2 (50%)
                 Box(
-                    modifier = Modifier.height(100.dp).fillMaxSize()
-                        .weight(0.5f)
+                    modifier = Modifier.height(100.dp).fillMaxSize().weight(0.5f)
                 ) {
-                    Column (modifier=Modifier.height(100.dp).fillMaxWidth()){
+                    Column(modifier = Modifier.height(100.dp).fillMaxWidth()) {
                         Spacer(modifier = Modifier.height(8.dp))
-                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd){
+                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
                             Text(
-                                text = treeName,
+                                text = tree.name,
                                 fontSize = 20.sp,
-                                color = Color.Black, fontWeight = FontWeight.ExtraBold, lineHeight = 2.sp
+                                color = Color.Black,
+                                fontWeight = FontWeight.ExtraBold,
+                                lineHeight = 2.sp
                             )
                         }
 
-                        Row (Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End){
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                             Text(
                                 text = " البياضة، الوادي، الوادي",
                                 fontSize = 11.sp,
                                 color = Color.Gray,
-                                textAlign = TextAlign.End, fontWeight = FontWeight.Light
+                                textAlign = TextAlign.End,
+                                fontWeight = FontWeight.Light
                             )
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_outline_location_on), // Replace with your icon resource
@@ -425,12 +433,9 @@ fun TreeCard(treeName:String,status:String="healthy",imageUrl:String="") {
                                 modifier = Modifier.size(20.dp),
                                 tint = Color.Gray // Optional: Set icon color
                             )
-
-
                         }
 
-
-                        Row (Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End){
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                             Text(
                                 text = "هيثم بكاري: 10 شجرة",
                                 fontSize = 11.sp,
@@ -451,13 +456,9 @@ fun TreeCard(treeName:String,status:String="healthy",imageUrl:String="") {
                                     contentScale = ContentScale.Crop // Ensures the image fills the circle
                                 )
                             }
-
-
-
                         }
                     }
                 }
-                val localContext = LocalContext.current
 
                 // Space 3 (25%)
                 Box(
@@ -469,18 +470,17 @@ fun TreeCard(treeName:String,status:String="healthy",imageUrl:String="") {
                         .border(2.dp, color = Color.Black.copy(alpha = 0.25f), shape = RoundedCornerShape(20.dp))
                 ) {
                     AsyncImage(
-                        model =imageUrl, // Replace with your image resource
-                        contentDescription = "Image 2",
-                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)), // Apply rounded corners,
+                        model = tree.urlImage, // Use tree's image URL
+                        contentDescription = "Tree Image",
+                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)), // Apply rounded corners
                         contentScale = ContentScale.Crop // Ensures the image fits inside the Box
                     )
                 }
             }
         }
     }
-
-
 }
+
 
 
 @Composable
