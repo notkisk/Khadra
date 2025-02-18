@@ -162,7 +162,7 @@ fun HomeScreen(modifier: Modifier,treeViewModel: TreeViewModel) {
         tree.name.contains(searchQuery, ignoreCase = true)
                 ||
                 tree.id.equals(searchQuery)
-                ||tree.type.contains(searchQuery, ignoreCase = true)||tree.status.contains(searchQuery, ignoreCase = true)// Case-insensitive search
+                ||tree.type.contains(searchQuery, ignoreCase = true)||tree.status.contains(searchQuery, ignoreCase = true)||tree.type.contains(searchQuery, ignoreCase = true)// Case-insensitive search
     }
     Box(
         modifier = Modifier

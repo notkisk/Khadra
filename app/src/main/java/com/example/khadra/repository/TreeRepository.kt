@@ -75,7 +75,7 @@ object TreeRepository {
             Tree(
                 id = "7",
                 name = "Palm Tree",
-                type = "Evergreen",
+                type = "Palm",
                 status = "Moderate",
                 coordinates = Pair(25.7617, -80.1918),
                 urlImage = "https://images.pexels.com/photos/286305/pexels-photo-286305.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
