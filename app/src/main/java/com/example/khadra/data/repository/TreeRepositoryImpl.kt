@@ -22,7 +22,7 @@ class TreeRepositoryImpl @Inject constructor() : TreeRepository {
             urlImage = "https://images.pexels.com/photos/1459495/pexels-photo-1459495.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
             lastIrrigationAction = Date(),
             createdAt = Date(),
-            updatedAt = Date()
+            updatedAt = Date(),location= "البياضة-الوادي"
         ),
         Tree(
             id = "2",
@@ -33,7 +33,7 @@ class TreeRepositoryImpl @Inject constructor() : TreeRepository {
             urlImage = "https://images.pexels.com/photos/1080400/pexels-photo-1080400.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
             lastIrrigationAction = Date(),
             createdAt = Date(),
-            updatedAt = Date()
+            updatedAt = Date(),location= "البياضة-الوادي"
         ),
         Tree(
             id = "3",
@@ -44,7 +44,7 @@ class TreeRepositoryImpl @Inject constructor() : TreeRepository {
             urlImage = "https://images.pexels.com/photos/53435/tree-oak-landscape-view-53435.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
             lastIrrigationAction = Date(),
             createdAt = Date(),
-            updatedAt = Date()
+            updatedAt = Date(),location= "البياضة-الوادي"
         ),
         Tree(
             id = "4",
@@ -55,7 +55,7 @@ class TreeRepositoryImpl @Inject constructor() : TreeRepository {
             urlImage = "https://images.pexels.com/photos/2360670/pexels-photo-2360670.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
             lastIrrigationAction = Date(),
             createdAt = Date(),
-            updatedAt = Date()
+            updatedAt = Date(),location= "البياضة-الوادي"
         ),
         Tree(
             id = "5",
@@ -66,7 +66,7 @@ class TreeRepositoryImpl @Inject constructor() : TreeRepository {
             urlImage = "https://images.pexels.com/photos/1067333/pexels-photo-1067333.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
             lastIrrigationAction = Date(),
             createdAt = Date(),
-            updatedAt = Date()
+            updatedAt = Date(),location= "البياضة-الوادي"
         ),
         Tree(
             id = "6",
@@ -77,7 +77,7 @@ class TreeRepositoryImpl @Inject constructor() : TreeRepository {
             urlImage = "https://images.pexels.com/photos/1459495/pexels-photo-1459495.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
             lastIrrigationAction = Date(),
             createdAt = Date(),
-            updatedAt = Date()
+            updatedAt = Date(),location= "البياضة-الوادي"
         ),
         Tree(
             id = "7",
@@ -88,7 +88,7 @@ class TreeRepositoryImpl @Inject constructor() : TreeRepository {
             urlImage = "https://images.pexels.com/photos/286305/pexels-photo-286305.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
             lastIrrigationAction = Date(),
             createdAt = Date(),
-            updatedAt = Date()
+            updatedAt = Date(),location= "البياضة-الوادي"
         ),
         Tree(
             id = "8",
@@ -99,7 +99,7 @@ class TreeRepositoryImpl @Inject constructor() : TreeRepository {
             urlImage = "https://images.pexels.com/photos/457418/pexels-photo-457418.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
             lastIrrigationAction = Date(),
             createdAt = Date(),
-            updatedAt = Date()
+            updatedAt = Date(),location= "البياضة-الوادي"
         ),
         Tree(
             id = "9",
@@ -110,7 +110,7 @@ class TreeRepositoryImpl @Inject constructor() : TreeRepository {
             urlImage = "https://images.pexels.com/photos/1128121/pexels-photo-1128121.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
             lastIrrigationAction = Date(),
             createdAt = Date(),
-            updatedAt = Date()
+            updatedAt = Date(),location= "البياضة-الوادي"
         ),
         Tree(
             id = "10",
@@ -121,7 +121,7 @@ class TreeRepositoryImpl @Inject constructor() : TreeRepository {
             urlImage = "https://images.pexels.com/photos/132428/pexels-photo-132428.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
             lastIrrigationAction = Date(),
             createdAt = Date(),
-            updatedAt = Date()
+            updatedAt = Date(),location= "البياضة-الوادي"
         ),
         Tree(
             id = "11",
@@ -132,7 +132,7 @@ class TreeRepositoryImpl @Inject constructor() : TreeRepository {
             urlImage = "https://images.pexels.com/photos/3625716/pexels-photo-3625716.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
             lastIrrigationAction = Date(),
             createdAt = Date(),
-            updatedAt = Date()
+            updatedAt = Date(),location= "البياضة-الوادي"
         ),
         Tree(
             id = "12",
@@ -143,7 +143,7 @@ class TreeRepositoryImpl @Inject constructor() : TreeRepository {
             urlImage = "https://images.pexels.com/photos/33109/fall-autumn-red-season.jpg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
             lastIrrigationAction = Date(),
             createdAt = Date(),
-            updatedAt = Date()
+            updatedAt = Date(),location= "البياضة-الوادي"
         ),
         Tree(
             id = "13",
@@ -154,7 +154,7 @@ class TreeRepositoryImpl @Inject constructor() : TreeRepository {
             urlImage = "https://images.pexels.com/photos/10067548/pexels-photo-10067548.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
             lastIrrigationAction = Date(),
             createdAt = Date(),
-            updatedAt = Date()
+            updatedAt = Date(),location= "البياضة-الوادي"
         ),
         Tree(
             id = "14",
@@ -165,7 +165,7 @@ class TreeRepositoryImpl @Inject constructor() : TreeRepository {
             urlImage = "https://images.pexels.com/photos/1979261/pexels-photo-1979261.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
             lastIrrigationAction = Date(),
             createdAt = Date(),
-            updatedAt = Date()
+            updatedAt = Date(),location= "البياضة-الوادي"
         ),
         Tree(
             id = "15",
@@ -176,7 +176,7 @@ class TreeRepositoryImpl @Inject constructor() : TreeRepository {
             urlImage = "https://i.etsystatic.com/35716232/r/il/359303/5328159719/il_570xN.5328159719_ewyf.jpg",
             lastIrrigationAction = Date(),
             createdAt = Date(),
-            updatedAt = Date()
+            updatedAt = Date(),location= "البياضة-الوادي"
         ),
         Tree(
             id = "16",
@@ -187,7 +187,7 @@ class TreeRepositoryImpl @Inject constructor() : TreeRepository {
             urlImage = "https://m.media-amazon.com/images/I/71xVQ-wZ9WL._AC_UF1000,1000_QL80_.jpg",
             lastIrrigationAction = Date(),
             createdAt = Date(),
-            updatedAt = Date()
+            updatedAt = Date(),location= "البياضة-الوادي"
         ),
         Tree(
             id = "17",
@@ -198,7 +198,7 @@ class TreeRepositoryImpl @Inject constructor() : TreeRepository {
             urlImage = "https://images.pexels.com/photos/1313431/pexels-photo-1313431.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
             lastIrrigationAction = Date(),
             createdAt = Date(),
-            updatedAt = Date()
+            updatedAt = Date(),location= "البياضة-الوادي"
         )
     )
 

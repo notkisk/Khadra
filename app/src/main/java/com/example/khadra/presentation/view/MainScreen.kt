@@ -397,7 +397,7 @@ fun TreeCard(tree: Tree, onCardClick: (Tree) -> Unit) {
 
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                             Text(
-                                text = " بلدية البياضة، الوادي، الوادي",
+                                text = tree.location,
                                 fontSize = 11.sp,
                                 color = Color.Gray,
                                 textAlign = TextAlign.End,

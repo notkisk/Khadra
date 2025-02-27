@@ -7,7 +7,7 @@ data class Tree(
     val name: String,
     val type: String,
     val status: String,
-    val coordinates: Pair<Double, Double>,
+    val coordinates: Pair<Double, Double>, val location:String,
     val urlImage: String,
     val lastIrrigationAction: Date,
     val createdAt: Date,
