@@ -1,6 +1,7 @@
 package com.example.khadra.presentation.view
 
 
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
 import com.example.khadra.R
 import com.example.khadra.data.model.NavItem
 import com.example.khadra.data.model.Tree
@@ -445,12 +447,20 @@ fun TreeCard(tree: Tree, onCardClick: (Tree) -> Unit) {
                         .padding(8.dp)
                         .border(2.dp, color = Color.Black.copy(alpha = 0.25f), shape = RoundedCornerShape(20.dp))
                 ) {
-                    AsyncImage(
-                        model = tree.urlImage, // Use tree's image URL
-                        contentDescription = "Tree Image",
-                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)), // Apply rounded corners
-                        contentScale = ContentScale.Crop // Ensures the image fits inside the Box
-                    )
+                    if (tree.imageUri != Uri.EMPTY)
+                        Image(
+                            painter = rememberAsyncImagePainter(tree.imageUri),
+                            contentDescription = "Selected Image",
+                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)), // Apply rounded corners
+                            contentScale = ContentScale.Crop // Ensures the image fits inside the Box
+                        )
+                    else
+                        AsyncImage(
+                            model = tree.urlImage, // Use tree's image URL
+                            contentDescription = "Tree Image",
+                            modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)), // Apply rounded corners
+                            contentScale = ContentScale.Crop // Ensures the image fits inside the Box
+                        )
                 }
             }
         }

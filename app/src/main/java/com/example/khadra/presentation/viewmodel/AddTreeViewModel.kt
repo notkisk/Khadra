@@ -1,5 +1,6 @@
 package com.example.khadra.presentation.viewmodel
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.khadra.data.model.Tree
@@ -70,19 +71,25 @@ class AddTreeViewModel @Inject constructor(
                     _state.value = _state.value.copy(error = "All fields must be correctly filled")
                 }
             }
+            is AddTreeEvent.ImageUriChanged -> {
+                _state.value = _state.value.copy(
+                    imageUri = event.uri,
+                    error = null
+                )
+            }
         }
     }
 
     private fun canSubmit(): Boolean {
         val currentState = _state.value
-        return currentState.name.isNotBlank() &&
+        return currentState.name.isNotBlank() && currentState.imageUri!= Uri.EMPTY&&
                 isArabic(currentState.name) &&
                 currentState.type.isNotBlank()&&
                 currentState.type.lowercase() in listOf("fruit", "ornamental", "evergreen", "palm", "vegetable") &&
                 currentState.status.lowercase() in listOf("critical", "low", "moderate", "healthy")&&
-                currentState.status.isNotBlank() &&
-                currentState.imageUrl.isNotBlank() &&
-                isValidUrl(currentState.imageUrl) && currentState.location.isNotBlank()
+                currentState.status.isNotBlank()
+               /* currentState.imageUrl.isNotBlank()*/
+                /*isValidUrl(currentState.imageUrl)*/ && currentState.location.isNotBlank()
     }
 
     private fun addTree() {
@@ -99,7 +106,7 @@ class AddTreeViewModel @Inject constructor(
                     location = currentState.location,
                     coordinates = currentState.coordinates,
                     urlImage = currentState.imageUrl,
-                    lastIrrigationAction = currentState.dat,
+                    lastIrrigationAction = currentState.dat, imageUri = currentState.imageUri,
                     createdAt = Date(),
                     updatedAt = Date()
                 )
@@ -129,6 +136,8 @@ class AddTreeViewModel @Inject constructor(
         data class CoordinatesChanged(val latitude: Double, val longitude: Double) : AddTreeEvent()
         data class LocationChanged(val location:String) : AddTreeEvent()
         data class ImageUrlChanged(val url: String) : AddTreeEvent()
+        data class ImageUriChanged(val uri: Uri) : AddTreeEvent()
+
         object Submit : AddTreeEvent()
     }
 
@@ -139,7 +148,7 @@ class AddTreeViewModel @Inject constructor(
         val status: String = "",
         val coordinates: Pair<Double, Double> = Pair(0.0, 0.0),
         val location: String = "",
-        val imageUrl: String = "",
+        val imageUrl: String = "",val imageUri: Uri = Uri.EMPTY,
         val dat: Date = Date(),
         val isLoading: Boolean = false,
         val error: String? = null,
