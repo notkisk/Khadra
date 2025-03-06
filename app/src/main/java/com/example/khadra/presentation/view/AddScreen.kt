@@ -7,10 +7,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -24,7 +27,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -48,14 +53,19 @@ import java.util.*
 fun AddScreen(viewModel: AddTreeViewModel = viewModel()) {
     val state by viewModel.state.collectAsState()
     val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(Modifier.height(150.dp))
+
+        Spacer(Modifier.height(50.dp))
+        Text("إضافة شجرة جديدة", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = KhadraGreen)
+
         PickImage(viewModel)
 
         OutlinedTextField(
@@ -71,41 +81,12 @@ fun AddScreen(viewModel: AddTreeViewModel = viewModel()) {
             ),shape = RoundedCornerShape(14.dp), singleLine = true
         )
 
+        TreeTypeDropDown(viewModel)
 
-        OutlinedTextField(
-            value = state.type,
-            onValueChange = { viewModel.onEvent(AddTreeViewModel.AddTreeEvent.TypeSelected(it)) },
-            //label = { Text("نوع الشجرة", fontSize = 16.sp) },
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp),
-            placeholder = { Text("fruit:\u200E نوع الشجرة مثال", textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth())},
-            textStyle = TextStyle(
-                textDirection = TextDirection.Rtl // Forces the cursor to follow the text correctly in RTL
-            ), singleLine = true
-        )
+        TreeHealthDropdown(viewModel)
 
 
         OutlinedTextField(
-            value = state.status,
-            onValueChange = { viewModel.onEvent(AddTreeViewModel.AddTreeEvent.StatusSelected(it)) },
-            //label = { Text(" حالة الشجرة") },
-            modifier = Modifier.fillMaxWidth() ,shape = RoundedCornerShape(14.dp),
-            placeholder = { Text("moderate:\u200E حالة الشجرة مثال", textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth())},
-            textStyle = TextStyle(
-                textDirection = TextDirection.Rtl // Forces the cursor to follow the text correctly in RTL
-            ), singleLine = true
-
-        )
-
-       /* OutlinedTextField(
-            value = state.imageUrl,
-            onValueChange = { viewModel.onEvent(AddTreeViewModel.AddTreeEvent.ImageUrlChanged(it)) },
-            //label = { Text("رابط صورة الشجرة", textAlign = TextAlign.End) }, singleLine = true,
-            modifier = Modifier.fillMaxWidth(),shape = RoundedCornerShape(14.dp),
-            placeholder = { Text("رابط صورة الشجرة", textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth())}
-
-
-        )*/
-            OutlinedTextField(
             value = state.location,
             onValueChange = {viewModel.onEvent(AddTreeViewModel.AddTreeEvent.LocationChanged(it))},
             //label = { Text("  موقع الشجرة مثال: البياضة") },
@@ -113,63 +94,157 @@ fun AddScreen(viewModel: AddTreeViewModel = viewModel()) {
             readOnly = false,shape = RoundedCornerShape(14.dp),
             placeholder = { Text("موقع الشجرة مثال: البياضة", textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth())},
             textStyle = TextStyle(
-                textDirection = TextDirection.Rtl // Forces the cursor to follow the text correctly in RTL
+                textDirection = TextDirection.Rtl
             ), singleLine = true
 
         )
 
-
-        Spacer(Modifier.height(24.dp))
         Button(
             onClick = { viewModel.onEvent(AddTreeViewModel.AddTreeEvent.Submit) },
             modifier = Modifier
-                .width(300.dp)
-                .height(50.dp),
-            enabled = !state.isLoading, colors = ButtonColors(containerColor = KhadraGreen, contentColor = Color.White, disabledContentColor = Color.Black, disabledContainerColor = Color.Gray),
-            elevation = ButtonDefaults.buttonElevation(6.dp), shape = RoundedCornerShape(14.dp)
+                .fillMaxWidth()
+                .height(55.dp)
+                ,
+            colors = ButtonDefaults.buttonColors(containerColor = KhadraGreen, contentColor = Color.White),
+            enabled = !state.isLoading
         ) {
-            Text(if (state.isLoading) "اضافة..." else "غرس", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text(if (state.isLoading) "إضافة..." else "غرس", fontSize = 20.sp, fontWeight = FontWeight.Bold)
         }
-
-        if (state.error != null) {
-            Text(state.error!!, color = MaterialTheme.colorScheme.error)
-        }
-
-        if (state.isSuccess) {
-            Text("Tree added successfully!", color = MaterialTheme.colorScheme.primary)
-        }
-
     }
+
 }
 
 @Composable
 fun PickImage(viewModel: AddTreeViewModel) {
-    val imageUri = remember { mutableStateOf<Uri?> (null)}
+    val imageUri = remember { mutableStateOf<Uri?>(null) }
 
-    val pickImageLauncher  = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()){
-        uri: Uri? ->
+    val pickImageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         imageUri.value = uri
-
+        uri?.let { viewModel.onEvent(AddTreeViewModel.AddTreeEvent.ImageUriChanged(it)) }
     }
 
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(bottom = 15.dp)) {
-        OutlinedButton (modifier = Modifier.width(270.dp).height(170.dp), colors = ButtonColors(containerColor = Color(0xFFF5F5F5), contentColor = Color.Black, disabledContentColor = Color(0xFFF5F5F5), disabledContainerColor = Color.Black),
-            shape = RoundedCornerShape(20),
-            onClick = { pickImageLauncher.launch("image/*") }) {
-            Column (modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center){
-                Text("اضافة شجرة")
-                Icon(imageVector = Icons.Outlined.Add, contentDescription = "Add")
+    Box(
+        modifier = Modifier
+            .size(170.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .border(BorderStroke(2.dp, Color.Gray), shape = RoundedCornerShape(20.dp))
+            .clickable { pickImageLauncher.launch("image/*") },
+        contentAlignment = Alignment.Center
+    ) {
+        imageUri.value?.let { uri ->
+            Image(
+                painter = rememberAsyncImagePainter(uri),
+                contentDescription = "Selected Image",
+                modifier = Modifier.fillMaxSize(), contentScale = ContentScale.FillHeight
+            )
+        } ?: Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(Icons.Outlined.Add, contentDescription = "Add Image", tint = Color.Gray)
+            Text("اضافة صورة", fontSize = 16.sp, color = Color.Gray)
+        }
+    }
+}
 
+
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TreeHealthDropdown(viewModel: AddTreeViewModel) {
+    val options = listOf("Healthy", "Moderate", "Low", "Critical")
+    var expanded by remember { mutableStateOf(false) }
+    val selectedOption = viewModel.state.collectAsState().value.status
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+
+            value = selectedOption,
+            onValueChange = { },
+
+            readOnly = true,
+            placeholder = { Text("حالة الشجرة", textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth()) },
+
+            trailingIcon = {
+                    Icon(
+                        imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                        contentDescription = "Expand"
+                    )
+
+            }, textStyle = TextStyle(
+                textDirection = TextDirection.Rtl
+            ), singleLine = true,
+
+            modifier = Modifier.menuAnchor().fillMaxWidth(),
+
+            )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        viewModel.onEvent(AddTreeViewModel.AddTreeEvent.StatusSelected(option))
+                        expanded = false
+                    }
+                )
             }
         }
-        imageUri.value?.let { uri ->
-            viewModel.onEvent(AddTreeViewModel.AddTreeEvent.ImageUriChanged(uri))
-        }
-
-
     }
-
-
 }
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TreeTypeDropDown(viewModel: AddTreeViewModel) {
+    val options = listOf("Fruit", "Palm", "Evergreen", "Ornamental", "Vegetable")
+    var expanded by remember { mutableStateOf(false) }
+    val selectedOption = viewModel.state.collectAsState().value.type
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it }
+    ) {
+        OutlinedTextField(
+            value = selectedOption,
+            onValueChange = {  },
+            readOnly = true,
+            placeholder = { Text("نوع الشجرة", textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth()) },
+            trailingIcon = {
+                    Icon(
+                        imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                        contentDescription = "Expand"
+                    )
+
+            },
+            textStyle = TextStyle(textDirection = TextDirection.Rtl),
+            singleLine = true,
+            modifier = Modifier
+                .menuAnchor() 
+                .fillMaxWidth()
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        viewModel.onEvent(AddTreeViewModel.AddTreeEvent.TypeSelected(option))
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+
+
 
 
