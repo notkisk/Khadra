@@ -223,7 +223,7 @@ fun TreeTypeDropDown(viewModel: AddTreeViewModel) {
             textStyle = TextStyle(textDirection = TextDirection.Rtl),
             singleLine = true,
             modifier = Modifier
-                .menuAnchor() 
+                .menuAnchor()
                 .fillMaxWidth()
         )
 
