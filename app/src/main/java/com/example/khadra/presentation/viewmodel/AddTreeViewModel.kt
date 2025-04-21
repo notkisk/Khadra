@@ -1,159 +1,192 @@
 package com.example.khadra.presentation.viewmodel
 
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.khadra.data.model.Tree
-import com.example.khadra.domain.usecase.AddTreeUseCase
+import com.example.khadra.data.model.TreeType
+import com.example.khadra.data.repository.TreeRepository
+import com.example.khadra.data.repository.TreeTypeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.util.Date
-import java.util.UUID
-import java.util.regex.Pattern
+import java.util.*
 import javax.inject.Inject
+
+private const val TAG = "AddTreeViewModel"
 
 @HiltViewModel
 class AddTreeViewModel @Inject constructor(
-    private val addTreeUseCase: AddTreeUseCase,
-    private val treeTypeRepository: com.example.khadra.data.repository.TreeTypeRepository,
+    private val treeRepository: TreeRepository,
+    private val treeTypeRepository: TreeTypeRepository
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(AddTreeState())
-    val state: StateFlow<AddTreeState> = _state.asStateFlow()
+    // UI State
+    private val _uiState = MutableStateFlow(AddTreeUiState())
+    val uiState: StateFlow<AddTreeUiState> = _uiState.asStateFlow()
 
-    fun onEvent(event: AddTreeEvent) {
-        when (event) {
-            is AddTreeEvent.NameChanged -> {
-                _state.value = _state.value.copy(
-                    name = event.name,
-                    error = if (isArabic(event.name)) null else "Tree name must be in Arabic"
-                )
-            }
-            is AddTreeEvent.TypeSelected -> {
-                viewModelScope.launch {
-                    treeTypeRepository.getTreeTypes().collect { types ->
-                        _state.value = _state.value.copy(
-                            type = event.type,
-                            error = if (types.any { it.name == event.type }) null else "Invalid tree type"
-                        )
-                    }
-                }
-            }
-            is AddTreeEvent.StatusSelected -> {
-                _state.value = _state.value.copy(
-                    status = event.status,
-                    error = if (event.status in listOf("Critical", "Low", "Moderate", "Healthy")) null else "Invalid status"
-                )
-            }
-            is AddTreeEvent.CoordinatesChanged -> {
-                _state.value = _state.value.copy(coordinates = Pair(event.latitude, event.longitude))
-            }
-            is AddTreeEvent.ImageUrlChanged -> {
-                _state.value = _state.value.copy(
-                    imageUrl = event.url,
-                    error = if (isValidUrl(event.url)) null else "Invalid image URL"
-                )
-            }
-            is AddTreeEvent.LocationChanged -> {
-                _state.value = _state.value.copy(
-                    location = event.location,
-                    error = if (event.location.isNotBlank()) null else "Location must not be empty"
-                )
-            }
+    // Add Operation State
+    private val _addState = MutableStateFlow<AddTreeState>(AddTreeState.Idle)
+    val addState: StateFlow<AddTreeState> = _addState.asStateFlow()
 
-            is AddTreeEvent.Submit -> {
-                if (canSubmit()) {
-                    addTree()
-                } else {
-                    _state.value = _state.value.copy(error = "All fields must be correctly filled")
+    // Tree Types State
+    private val _treeTypes = MutableStateFlow<List<TreeType>>(emptyList())
+    val treeTypes: StateFlow<List<TreeType>> = _treeTypes.asStateFlow()
+
+    init {
+        Log.d(TAG, "Initializing AddTreeViewModel")
+        loadTreeTypes()
+    }
+
+    private fun loadTreeTypes() {
+        Log.d(TAG, "Loading tree types")
+        viewModelScope.launch {
+            try {
+                treeTypeRepository.getTreeTypes().collect { types ->
+                    Log.d(TAG, "Received ${types.size} tree types")
+                    _treeTypes.value = types
                 }
-            }
-            is AddTreeEvent.ImageUriChanged -> {
-                _state.value = _state.value.copy(
-                    imageUri = event.uri,
-                    error = null
-                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading tree types", e)
             }
         }
     }
 
-    private fun canSubmit(): Boolean {
-        val currentState = _state.value
-        return currentState.name.isNotBlank() && currentState.imageUri!= Uri.EMPTY&&
-                isArabic(currentState.name) &&
-                currentState.type.isNotBlank()&&
-                currentState.type.lowercase() in listOf("fruit", "ornamental", "evergreen", "palm", "vegetable") &&
-                currentState.status.lowercase() in listOf("critical", "low", "moderate", "healthy")&&
-                currentState.status.isNotBlank()
-               /* currentState.imageUrl.isNotBlank()*/
-                /*isValidUrl(currentState.imageUrl)*/ && currentState.location.isNotBlank()
+    fun onEvent(event: AddTreeEvent) {
+        Log.d(TAG, "Received event: $event")
+        when (event) {
+            is AddTreeEvent.NameChanged -> {
+                _uiState.value = _uiState.value.copy(name = event.name)
+                Log.d(TAG, "Name updated to: ${event.name}")
+            }
+            is AddTreeEvent.TypeSelected -> {
+                _uiState.value = _uiState.value.copy(type = event.type)
+                Log.d(TAG, "Type selected: ${event.type}")
+            }
+            is AddTreeEvent.StatusSelected -> {
+                _uiState.value = _uiState.value.copy(status = event.status)
+                Log.d(TAG, "Status selected: ${event.status}")
+            }
+            is AddTreeEvent.LocationChanged -> {
+                _uiState.value = _uiState.value.copy(location = event.location)
+                Log.d(TAG, "Location updated to: ${event.location}")
+            }
+            is AddTreeEvent.CoordinatesChanged -> {
+                _uiState.value = _uiState.value.copy(
+                    coordinates = Pair(event.latitude, event.longitude)
+                )
+                Log.d(TAG, "Coordinates updated to: (${event.latitude}, ${event.longitude})")
+            }
+            is AddTreeEvent.ImageUriChanged -> {
+                _uiState.value = _uiState.value.copy(selectedImageUri = event.uri)
+                Log.d(TAG, "Image URI updated to: ${event.uri}")
+            }
+            is AddTreeEvent.Submit -> {
+                Log.d(TAG, "Submit event received")
+                submitTree()
+            }
+        }
     }
 
-    private fun addTree() {
-        val currentState = _state.value
-        _state.value = currentState.copy(isLoading = true, error = null)
+    private fun submitTree() {
+        val currentState = _uiState.value
+        Log.d(TAG, "Starting tree submission with state: $currentState")
+
+        // Validate required fields
+        if (currentState.name.isBlank()) {
+            Log.w(TAG, "Validation failed: Name is blank")
+            _addState.value = AddTreeState.Error("يرجى إدخال اسم الشجرة")
+            return
+        }
+        if (currentState.type.isNullOrBlank()) {
+            Log.w(TAG, "Validation failed: Type is blank")
+            _addState.value = AddTreeState.Error("يرجى اختيار نوع الشجرة")
+            return
+        }
+        if (currentState.location.isBlank()) {
+            Log.w(TAG, "Validation failed: Location is blank")
+            _addState.value = AddTreeState.Error("يرجى إدخال موقع الشجرة")
+            return
+        }
+        if (currentState.status.isBlank()) {
+            Log.w(TAG, "Validation failed: Status is blank")
+            _addState.value = AddTreeState.Error("يرجى اختيار حالة الشجرة")
+            return
+        }
+        if (currentState.coordinates == null) {
+            Log.w(TAG, "Validation failed: Coordinates not set")
+            _addState.value = AddTreeState.Error("يرجى تحديد موقع الشجرة على الخريطة")
+            return
+        }
+
+        Log.d(TAG, "All validations passed, proceeding with tree creation")
+        _addState.value = AddTreeState.Loading
 
         viewModelScope.launch {
             try {
-                val tree = Tree(
+                Log.d(TAG, "Creating new tree object")
+                val now = Date()
+                val tree = Tree.fromCoordinates(
                     id = UUID.randomUUID().toString(),
                     name = currentState.name,
                     type = currentState.type,
                     status = currentState.status,
-                    location = currentState.location,
                     coordinates = currentState.coordinates,
-                    urlImage = currentState.imageUrl,
-                    lastIrrigationAction = currentState.dat, imageUri = currentState.imageUri,
-                    createdAt = Date(),
-                    updatedAt = Date()
+                    location = currentState.location,
+                    urlImage = currentState.selectedImageUri?.toString() ?: "",
+                    lastIrrigationAction = now,
+                    createdAt = now,
+                    updatedAt = now
                 )
-                addTreeUseCase.addTree(tree)
-                _state.value = currentState.copy(isSuccess = true, isLoading = false)
+                Log.d(TAG, "Created tree object: $tree")
+
+                Log.d(TAG, "Attempting to add tree to repository")
+                val result = treeRepository.addTree(tree)
+                Log.d(TAG, "Repository add result: $result")
+                
+                _addState.value = AddTreeState.Success
+                Log.d(TAG, "Tree added successfully")
+                
+                // Reset UI state after successful submission
+                _uiState.value = AddTreeUiState()
+                Log.d(TAG, "UI state reset")
             } catch (e: Exception) {
-                _state.value = currentState.copy(error = "Failed to add tree", isLoading = false)
+                Log.e(TAG, "Error adding tree", e)
+                _addState.value = AddTreeState.Error(e.message ?: "حدث خطأ أثناء إضافة الشجرة")
             }
         }
     }
 
-    private fun isArabic(text: String): Boolean {
-        return text.isNotEmpty() && Pattern.matches("^[\\u0600-\\u06FF\\s]+$", text)
+    fun resetAddState() {
+        Log.d(TAG, "Resetting add state")
+        _addState.value = AddTreeState.Idle
     }
 
-    private fun isValidUrl(url: String): Boolean {
-        val regex = "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$".toRegex()
-        return regex.matches(url)
+    // State Classes
+    data class AddTreeUiState(
+        val name: String = "",
+        val type: String? = null,
+        val status: String = "",
+        val location: String = "",
+        val coordinates: Pair<Double, Double>? = null,
+        val selectedImageUri: Uri? = null
+    )
+
+    sealed class AddTreeState {
+        object Idle : AddTreeState()
+        object Loading : AddTreeState()
+        object Success : AddTreeState()
+        data class Error(val message: String) : AddTreeState()
     }
-
-
 
     sealed class AddTreeEvent {
         data class NameChanged(val name: String) : AddTreeEvent()
         data class TypeSelected(val type: String) : AddTreeEvent()
         data class StatusSelected(val status: String) : AddTreeEvent()
+        data class LocationChanged(val location: String) : AddTreeEvent()
         data class CoordinatesChanged(val latitude: Double, val longitude: Double) : AddTreeEvent()
-        data class LocationChanged(val location:String) : AddTreeEvent()
-        data class ImageUrlChanged(val url: String) : AddTreeEvent()
         data class ImageUriChanged(val uri: Uri) : AddTreeEvent()
-
         object Submit : AddTreeEvent()
     }
-
-    // State Data Class
-    data class AddTreeState(
-        val name: String = "",
-        val type: String = "",
-        val status: String = "",
-        val coordinates: Pair<Double, Double> = Pair(0.0, 0.0),
-        val location: String = "",
-        val imageUrl: String = "",val imageUri: Uri = Uri.EMPTY,
-        val dat: Date = Date(),
-        val isLoading: Boolean = false,
-        val error: String? = null,
-        val isSuccess: Boolean = false
-    )
-
-
 }

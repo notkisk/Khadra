@@ -1,5 +1,8 @@
 package com.example.khadra.data.di
 
+import android.content.Context
+import com.example.khadra.SupabaseClientProvider
+import com.example.khadra.data.remote.SupabaseTreeDataSource
 import com.example.khadra.data.repository.TreeRepository
 import com.example.khadra.data.repository.TreeRepositoryImpl
 import com.example.khadra.data.repository.TreeTypeRepository
@@ -7,19 +10,34 @@ import com.example.khadra.data.repository.TreeTypeRepositoryImpl
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.github.jan.supabase.SupabaseClient
 import javax.inject.Singleton
-
 
 @Module
 @InstallIn(SingletonComponent::class)
 object DataModule {
 
+    @Provides
+    @Singleton
+    fun provideSupabaseClient(): SupabaseClient {
+        return SupabaseClientProvider.client
+    }
 
     @Provides
     @Singleton
-    fun provideTreeRepository(): TreeRepository {
-        return TreeRepositoryImpl()
+    fun provideSupabaseTreeDataSource(client: SupabaseClient): SupabaseTreeDataSource {
+        return SupabaseTreeDataSource(client)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTreeRepository(
+        @ApplicationContext context: Context,
+        supabaseDataSource: SupabaseTreeDataSource
+    ): TreeRepository {
+        return TreeRepositoryImpl(context, supabaseDataSource)
     }
 
     @Provides
@@ -27,6 +45,4 @@ object DataModule {
     fun provideTreeTypeRepository(): TreeTypeRepository {
         return TreeTypeRepositoryImpl()
     }
-
-
 }
