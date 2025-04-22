@@ -1,19 +1,31 @@
 package com.example.khadra.data.remote
 
+import android.content.Context
+import android.net.Uri
 import com.example.khadra.data.model.Tree
 import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.postgrest.query.Returning
+import io.github.jan.supabase.storage.Storage
+import io.github.jan.supabase.storage.storage
 import io.github.jan.supabase.postgrest.exception.PostgrestRestException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import android.util.Log
+import java.io.ByteArrayOutputStream
+import java.util.UUID
+import io.ktor.http.ContentType
 
-class SupabaseTreeDataSource(private val client: SupabaseClient) {
+class SupabaseTreeDataSource(
+    private val client: SupabaseClient,
+    private val context: Context
+) {
+    init {
+        client.storage // Initialize storage plugin
+    }
 
     companion object {
         private const val TABLE_NAME = "trees"
+        private const val BUCKET_NAME = "tree-images"
         private const val TAG = "SupabaseTreeDataSource"
     }
 
@@ -28,6 +40,7 @@ class SupabaseTreeDataSource(private val client: SupabaseClient) {
             if (e.message?.contains("row-level security policy") == true) {
                 Log.e(TAG, "RLS is enabled. Please disable RLS for the trees table in Supabase dashboard.", e)
             }
+            Log.e(TAG, "PostgrestRestException: ${e.message}", e)
             emptyList()
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching trees from Supabase", e)
@@ -36,46 +49,77 @@ class SupabaseTreeDataSource(private val client: SupabaseClient) {
         }
     }
 
-    suspend fun addTree(tree: Tree): Tree = withContext(Dispatchers.IO) {
+    private suspend fun uploadImage(imageUri: Uri): String? = withContext(Dispatchers.IO) {
+        try {
+            val inputStream = context.contentResolver.openInputStream(imageUri)
+            val bytes = inputStream?.use { input ->
+                ByteArrayOutputStream().use { output ->
+                    input.copyTo(output)
+                    output.toByteArray()
+                }
+            } ?: throw IllegalStateException("Could not read image file")
+
+            val fileName = "${UUID.randomUUID()}.jpg"
+            
+            // Upload the image bytes
+            client.storage[BUCKET_NAME].upload(
+                path = fileName,
+                data = bytes,
+                options = {
+                    contentType = ContentType.Image.JPEG
+                }
+            )
+
+            // Return the public URL
+            client.storage[BUCKET_NAME].publicUrl(fileName)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error uploading image", e)
+            null
+        }
+    }
+
+    suspend fun addTree(tree: Tree, imageUri: Uri?): Tree = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Starting tree addition to Supabase")
-            Log.d(TAG, "Tree data to insert: $tree")
-            Log.d(TAG, "Coordinates: (${tree.coordinatesLat}, ${tree.coordinatesLng})")
+            
+            // First upload the image if provided
+            val imageUrl = imageUri?.let { 
+                Log.d(TAG, "Uploading image for tree")
+                uploadImage(it).also { url ->
+                    Log.d(TAG, "Image uploaded, URL: $url")
+                }
+            }
+            
+            // Create tree with image URL
+            val treeToInsert = tree.copy(
+                imageUrl = imageUrl // This will be mapped to url_image in Supabase due to @SerialName
+            )
+            
+            Log.d(TAG, "Tree data to insert: $treeToInsert")
             
             val insertedTree = client.postgrest[TABLE_NAME]
-                .insert(tree) {
-                    select() // Get the inserted row back
+                .insert(treeToInsert) {
+                    select()
                 }
                 .decodeSingle<Tree>()
             
             Log.d(TAG, "Tree successfully added to Supabase")
-            Log.d(TAG, "Inserted tree details: $insertedTree")
-            Log.d(TAG, "Inserted tree ID: ${insertedTree.id}")
             insertedTree
         } catch (e: PostgrestRestException) {
-            if (e.message?.contains("row-level security policy") == true) {
-                Log.e(TAG, "RLS is enabled and blocking operations. To fix this:", e)
-                Log.e(TAG, "1. Go to Supabase dashboard")
-                Log.e(TAG, "2. Navigate to Database -> Tables -> trees")
-                Log.e(TAG, "3. Click on 'Disable RLS' to allow all operations")
-                throw RuntimeException("Please disable RLS for the trees table in Supabase dashboard")
-            }
+            Log.e(TAG, "PostgrestRestException: ${e.message}", e)
             throw e
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to add tree to Supabase", e)
-            Log.e(TAG, "Error details: ${e.message}")
+            Log.e(TAG, "Error adding tree to Supabase", e)
             throw e
         }
     }
 
     // TODO: Implement updateTree and deleteTree functions using Supabase client
     suspend fun updateTree(tree: Tree) {
-        Log.w(TAG, "updateTree not implemented yet.")
-        // client.postgrest[TABLE_NAME].update({ /* update fields */ }) { eq("id", tree.id) }
+        // Implementation pending
     }
 
     suspend fun deleteTree(treeId: String) {
-        Log.w(TAG, "deleteTree not implemented yet.")
-        // client.postgrest[TABLE_NAME].delete { eq("id", treeId) }
+        // Implementation pending
     }
 }

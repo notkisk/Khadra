@@ -13,24 +13,42 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import android.util.Log
 
 @Serializable
 data class Tree(
-    val id: String,
-    val name: String,
-    val type: String,
-    val status: String,
-    @SerialName("coordinates_lat") val coordinatesLat: Double,
-    @SerialName("coordinates_lng") val coordinatesLng: Double,
-    val location: String,
-    @SerialName("url_image") val urlImage: String = "",
-    @SerialName("image_uri") val imageUri: String = "",
-    @SerialName("last_irrigation_action") @Serializable(with = DateSerializer::class) val lastIrrigationAction: Date,
-    @SerialName("created_at") @Serializable(with = DateSerializer::class) val createdAt: Date,
-    @SerialName("updated_at") @Serializable(with = DateSerializer::class) val updatedAt: Date
+    val id: String = "",
+    val name: String = "",
+    val type: String = "",
+    val location: String = "",
+    val status: String = "",
+    @Serializable(with = DateSerializer::class)
+    @SerialName("created_at")
+    val createdAt: Date = Date(),
+    @SerialName("coordinates_lat")
+    val coordinatesLat: Double = 0.0,
+    @SerialName("coordinates_lng")
+    val coordinatesLng: Double = 0.0,
+    @SerialName("url_image")
+    val imageUrl: String? = null,
+    @SerialName("last_irrigation_action")
+    @Serializable(with = DateSerializer::class)
+    val lastIrrigationAction: Date = Date(),
+    @SerialName("updated_at")
+    @Serializable(with = DateSerializer::class)
+    val updatedAt: Date = Date()
 ) {
     val coordinates: Pair<Double, Double>
         get() = Pair(coordinatesLat, coordinatesLng)
+
+    // Convert imageUrl string to Uri when needed
+    val imageUri: Uri?
+        get() = try {
+            imageUrl?.let { Uri.parse(it) }
+        } catch (e: Exception) {
+            Log.e("Tree", "Failed to parse URI: $imageUrl", e)
+            null
+        }
 
     companion object {
         fun fromCoordinates(
@@ -40,30 +58,30 @@ data class Tree(
             status: String,
             coordinates: Pair<Double, Double>,
             location: String,
-            urlImage: String = "",
-            imageUri: String = "",
+            imageUrl: String? = null,
             lastIrrigationAction: Date = Date(),
             createdAt: Date = Date(),
             updatedAt: Date = Date()
-        ): Tree = Tree(
-            id = id,
-            name = name,
-            type = type,
-            status = status,
-            coordinatesLat = coordinates.first,
-            coordinatesLng = coordinates.second,
-            location = location,
-            urlImage = urlImage,
-            imageUri = imageUri,
-            lastIrrigationAction = lastIrrigationAction,
-            createdAt = createdAt,
-            updatedAt = updatedAt
-        )
+        ): Tree {
+            return Tree(
+                id = id,
+                name = name,
+                type = type,
+                status = status,
+                coordinatesLat = coordinates.first,
+                coordinatesLng = coordinates.second,
+                location = location,
+                imageUrl = imageUrl,
+                lastIrrigationAction = lastIrrigationAction,
+                createdAt = createdAt,
+                updatedAt = updatedAt
+            )
+        }
     }
 }
 
 object DateSerializer : KSerializer<Date> {
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX", Locale.US).apply {
+    private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US).apply {
         timeZone = TimeZone.getTimeZone("UTC")
     }
 
@@ -74,6 +92,20 @@ object DateSerializer : KSerializer<Date> {
     }
 
     override fun deserialize(decoder: Decoder): Date {
-        return dateFormat.parse(decoder.decodeString()) ?: Date(0)
+        val dateStr = decoder.decodeString()
+        return try {
+            dateFormat.parse(dateStr) ?: throw IllegalArgumentException("Invalid date format: $dateStr")
+        } catch (e: Exception) {
+            Log.e("DateSerializer", "Failed to parse date: $dateStr", e)
+            try {
+                // Try parsing without milliseconds
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+                    .apply { timeZone = TimeZone.getTimeZone("UTC") }
+                    .parse(dateStr) ?: Date()
+            } catch (e2: Exception) {
+                Log.e("DateSerializer", "Failed to parse date without milliseconds: $dateStr", e2)
+                Date() // Return current date as fallback
+            }
+        }
     }
 }

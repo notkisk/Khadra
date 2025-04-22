@@ -37,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.khadra.R
@@ -92,15 +91,15 @@ fun MainScreen(
                                 icon = {
                                     Box(
                                         modifier = Modifier
-                                            .size(70.dp) // ✅ Bigger button
-                                            .background(KhadraGreen, shape = CircleShape) // ✅ Custom color
-                                            .padding(10.dp) // ✅ Adjust padding for better appearance
+                                            .size(70.dp) // Bigger button
+                                            .background(KhadraGreen, shape = CircleShape) // Custom color
+                                            .padding(10.dp) // Adjust padding for better appearance
                                     ) {
                                         Icon(
                                             item.icon,
                                             contentDescription = item.label,
-                                            modifier = Modifier.size(50.dp), // ✅ Bigger icon
-                                            tint = Color.White // ✅ White icon for contrast
+                                            modifier = Modifier.size(50.dp), // Bigger icon
+                                            tint = Color.White // White icon for contrast
                                         )
                                     }
                                 },
@@ -143,18 +142,15 @@ fun ContentScreen(modifier: Modifier = Modifier, selectedIndex: Int, treeViewMod
     when (selectedIndex) {
         0 -> ProfileScreen()
         1 -> MapScreen()
-        2 -> AddScreen(
-            viewModel = hiltViewModel(),
-        )
+        2 -> AddScreen(viewModel = hiltViewModel(),{})
         3 -> IrrigationScreen()
-        4 -> HomeScreen(modifier,treeViewModel) // ✅ Fixed: No infinite recursion
+        4 -> HomeScreen(modifier,treeViewModel) // Fixed: No infinite recursion
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(modifier: Modifier, treeViewModel: TreeViewModel) {
-
     val uiState by treeViewModel.uiState.collectAsState()
     val treesList = uiState.trees
     var searchQuery by remember { mutableStateOf("") }
@@ -185,9 +181,7 @@ fun HomeScreen(modifier: Modifier, treeViewModel: TreeViewModel) {
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { sq -> searchQuery = sq },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 6.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp),
                 shape = RoundedCornerShape(32.dp), // Matches Box clipping
                 singleLine = true,
                 placeholder = { Text("Search...", fontSize = 16.sp, color = Color.Black) },
@@ -212,9 +206,7 @@ fun HomeScreen(modifier: Modifier, treeViewModel: TreeViewModel) {
             )
 
             Spacer(modifier = Modifier.height(10.dp))
-            Box(modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 6.dp), contentAlignment = Alignment.CenterEnd) {
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp), contentAlignment = Alignment.CenterEnd) {
                 Text(":الأشجار المغروسة", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
             }
 
@@ -236,26 +228,20 @@ fun HomeScreen(modifier: Modifier, treeViewModel: TreeViewModel) {
                 }
             } else {
                 if (searchQuery.isNotEmpty() && filteredTrees.isNotEmpty()) {
-                    LazyColumn(modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 110.dp)) {
+                    LazyColumn(modifier = Modifier.fillMaxSize().padding(bottom = 110.dp)) {
                         items(filteredTrees) { tree ->
                             TreeCard(tree = tree, onCardClick = { selectedTree = it }) // Pass tree and click handler
                             Spacer(Modifier.height(12.dp))
                         }
                     }
                 } else if (filteredTrees.isEmpty()) {
-                    Column(modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 100.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(modifier = Modifier.fillMaxSize().padding(bottom = 100.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                         Image(modifier = Modifier.size(80.dp), painter = painterResource(R.drawable.ic_error), contentDescription = "Error")
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(text = "No Results Found!", fontSize = 32.sp, fontWeight = FontWeight.Light, color = Color.Gray)
                     }
                 } else {
-                    LazyColumn(modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 110.dp)) {
+                    LazyColumn(modifier = Modifier.fillMaxSize().padding(bottom = 110.dp)) {
                         items(treesList) { tree ->
                             TreeCard(tree = tree, onCardClick = { selectedTree = it }) // Pass tree and click handler
                             Spacer(Modifier.height(12.dp))
@@ -376,11 +362,7 @@ fun TreeCard(tree: Tree, onCardClick: (Tree) -> Unit) {
                     modifier = Modifier
                         .weight(0.25f)
                         .height(100.dp)
-                        .border(
-                            1.dp,
-                            color = Color.Black.copy(alpha = 0.25f),
-                            shape = RoundedCornerShape(9.dp)
-                        )
+                        .border(1.dp, color = Color.Black.copy(alpha = 0.25f), shape = RoundedCornerShape(9.dp))
                 ) {
                     Column(
                         modifier = Modifier.fillMaxHeight(),
@@ -392,10 +374,7 @@ fun TreeCard(tree: Tree, onCardClick: (Tree) -> Unit) {
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Black,
-                            modifier = Modifier
-                                .zIndex(100f)
-                                .fillMaxWidth()
-                                .align(Alignment.End),
+                            modifier = Modifier.zIndex(100f).fillMaxWidth().align(Alignment.End),
                             textAlign = TextAlign.Center
                         )
                         StatusBar(tree.status)
@@ -404,14 +383,9 @@ fun TreeCard(tree: Tree, onCardClick: (Tree) -> Unit) {
 
                 // Space 2 (50%)
                 Box(
-                    modifier = Modifier
-                        .height(100.dp)
-                        .fillMaxSize()
-                        .weight(0.5f)
+                    modifier = Modifier.height(100.dp).fillMaxSize().weight(0.5f)
                 ) {
-                    Column(modifier = Modifier
-                        .height(100.dp)
-                        .fillMaxWidth()) {
+                    Column(modifier = Modifier.height(100.dp).fillMaxWidth()) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
                             Text(
@@ -449,8 +423,7 @@ fun TreeCard(tree: Tree, onCardClick: (Tree) -> Unit) {
                             Box(
                                 modifier = Modifier
                                     .size(20.dp)
-                                    .clip(CircleShape)
-                                    .shadow(elevation = 4.dp) // Apply shadow
+                                    .clip(CircleShape).shadow(elevation = 4.dp) // Apply shadow
                             ) {
                                 Image(
                                     painter = painterResource(id = R.drawable.guy1),
@@ -469,33 +442,20 @@ fun TreeCard(tree: Tree, onCardClick: (Tree) -> Unit) {
                 Box(
                     modifier = Modifier
                         .weight(0.25f)
-                        .aspectRatio(1f) // Enforce 1:1 aspect ratio for the Box
-                        .wrapContentSize() // Make the Box wrap around the content
+                        .aspectRatio(1f)
+                        .wrapContentSize()
                         .padding(8.dp)
-                        .border(
-                            2.dp,
-                            color = Color.Black.copy(alpha = 0.25f),
-                            shape = RoundedCornerShape(20.dp)
-                        )
+                        .border(2.dp, color = Color.Black.copy(alpha = 0.25f), shape = RoundedCornerShape(20.dp))
                 ) {
-                    if (tree.imageUri != "")
-                        Image(
-                            painter = rememberAsyncImagePainter(tree.imageUri),
-                            contentDescription = "Selected Image",
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(20.dp)), // Apply rounded corners
-                            contentScale = ContentScale.Crop // Ensures the image fits inside the Box
-                        )
-                    else
-                        AsyncImage(
-                            model = tree.urlImage, // Use tree's image URL
-                            contentDescription = "Tree Image",
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(20.dp)), // Apply rounded corners
-                            contentScale = ContentScale.Crop // Ensures the image fits inside the Box
-                        )
+                    AsyncImage(
+                        model = tree.imageUri ?: R.drawable.tree_placeholder,
+                        contentDescription = "Tree Image",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(20.dp)),
+                        contentScale = ContentScale.Crop,
+                        error = painterResource(id = R.drawable.tree_placeholder)
+                    )
                 }
             }
         }
@@ -529,16 +489,14 @@ fun StatusBar(status: String) {
                 .clip(shape = RoundedCornerShape(4.dp))
                 .width(60.dp)
                 .height(10.dp) // Height of the status bar
-                .background(Color.White)
-                .border(BorderStroke(1.dp, color = Color.Gray))
+                .background(Color.White).border(BorderStroke(1.dp, color = Color.Gray))
         ){
             Box(
                 modifier = Modifier
                     .clip(shape = RoundedCornerShape(4.dp))
                     .width(progress.dp)
                     .height(10.dp) // Height of the status bar
-                    .background(color)
-                    .border(BorderStroke(1.dp, color = Color.Gray))
+                    .background(color).border(BorderStroke(1.dp, color = Color.Gray))
             )
         }
     }

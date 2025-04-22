@@ -27,17 +27,19 @@ object DataModule {
 
     @Provides
     @Singleton
-    fun provideSupabaseTreeDataSource(client: SupabaseClient): SupabaseTreeDataSource {
-        return SupabaseTreeDataSource(client)
+    fun provideSupabaseTreeDataSource(
+        client: SupabaseClient,
+        @ApplicationContext context: Context
+    ): SupabaseTreeDataSource {
+        return SupabaseTreeDataSource(client, context)
     }
 
     @Provides
     @Singleton
     fun provideTreeRepository(
-        @ApplicationContext context: Context,
         supabaseDataSource: SupabaseTreeDataSource
     ): TreeRepository {
-        return TreeRepositoryImpl(context, supabaseDataSource)
+        return TreeRepositoryImpl(supabaseDataSource)
     }
 
     @Provides

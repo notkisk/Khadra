@@ -1,14 +1,15 @@
 package com.example.khadra.presentation.view
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.net.Uri
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -21,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -29,7 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
-import com.example.khadra.presentation.viewmodel.AddTreeViewModel
+import com.example.khadra.R
+import com.example.khadra.presentation.viewmodel.*
 import com.example.khadra.ui.theme.KhadraGreen
 
 private const val TAG = "AddScreen"
@@ -37,37 +40,59 @@ private const val TAG = "AddScreen"
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddScreen(
-    viewModel: AddTreeViewModel = hiltViewModel()
+    viewModel: AddTreeViewModel = hiltViewModel(),
+    onNavigateBack: () -> Unit
 ) {
     Log.d(TAG, "AddScreen composable started")
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
-    val state by viewModel.uiState.collectAsState()
-    val addState by viewModel.addState.collectAsState()
+    val state = viewModel.uiState.value
+    val addState = viewModel.addState.value
     val treeTypes by viewModel.treeTypes.collectAsState()
+
+    var showLocationPermissionDialog by remember { mutableStateOf(false) }
+
+    // Permission launcher
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val locationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (locationGranted) {
+            viewModel.getCurrentLocation()
+        }
+    }
+
+    if (showLocationPermissionDialog) {
+        PermissionDialog(
+            onDismiss = { showLocationPermissionDialog = false },
+            onOkClick = {
+                showLocationPermissionDialog = false
+                locationPermissionLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
+                )
+            },
+            permissionTextProvider = "نحتاج إلى إذن الوصول إلى موقعك لتحديد موقع الشجرة"
+        )
+    }
 
     // Handle side effects from addState
     LaunchedEffect(addState) {
         Log.d(TAG, "AddState changed to: $addState")
-        when (val currentState = addState) {
-            is AddTreeViewModel.AddTreeState.Success -> {
-                Log.d(TAG, "Tree added successfully, showing success message")
-                snackbarHostState.showSnackbar(
-                    message = "تمت إضافة الشجرة بنجاح!",
-                    duration = SnackbarDuration.Long
-                )
+        when (addState) {
+            is AddTreeState.Success -> {
+                snackbarHostState.showSnackbar("تمت إضافة الشجرة بنجاح")
                 viewModel.resetAddState()
             }
-            is AddTreeViewModel.AddTreeState.Error -> {
-                Log.e(TAG, "Error adding tree: ${currentState.message}")
-                snackbarHostState.showSnackbar(
-                    message = currentState.message,
-                    duration = SnackbarDuration.Long
-                )
+            is AddTreeState.Error -> {
+                snackbarHostState.showSnackbar(addState.message)
                 viewModel.resetAddState()
             }
-            is AddTreeViewModel.AddTreeState.Loading -> {
-                Log.d(TAG, "Tree addition in progress")
+            is AddTreeState.Loading -> {
+                // Show loading state
             }
             else -> {}
         }
@@ -103,14 +128,14 @@ fun AddScreen(
                     selectedUri = state.selectedImageUri,
                     onImageSelected = { uri ->
                         Log.d(TAG, "Image selected: $uri")
-                        viewModel.onEvent(AddTreeViewModel.AddTreeEvent.ImageUriChanged(uri))
+                        viewModel.onEvent(AddTreeEvent.ImageSelected(uri))
                     }
                 )
 
                 // Tree Name
                 OutlinedTextField(
                     value = state.name,
-                    onValueChange = { viewModel.onEvent(AddTreeViewModel.AddTreeEvent.NameChanged(it)) },
+                    onValueChange = { viewModel.onEvent(AddTreeEvent.NameChanged(it)) },
                     label = { Text("اسم الشجرة") },
                     placeholder = { Text("أدخل اسم الشجرة", textAlign = TextAlign.End) },
                     modifier = Modifier.fillMaxWidth(),
@@ -120,7 +145,7 @@ fun AddScreen(
                     ),
                     shape = RoundedCornerShape(14.dp),
                     singleLine = true,
-                    isError = addState is AddTreeViewModel.AddTreeState.Error && state.name.isBlank()
+                    isError = addState is AddTreeState.Error && state.name.isBlank()
                 )
 
                 // Type and Health Status Row
@@ -131,17 +156,16 @@ fun AddScreen(
                     // Tree Type Dropdown
                     TreeTypeDropDown(
                         selectedType = state.type ?: "",
-                        isError = addState is AddTreeViewModel.AddTreeState.Error && state.type.isNullOrBlank(),
-                        onTypeSelected = { viewModel.onEvent(AddTreeViewModel.AddTreeEvent.TypeSelected(it)) },
+                        isError = addState is AddTreeState.Error && state.type.isNullOrBlank(),
+                        onTypeSelected = { viewModel.onEvent(AddTreeEvent.TypeChanged(it)) },
                         modifier = Modifier.weight(1f)
                     )
 
                     // Tree Health Status Dropdown
                     TreeHealthDropdown(
-                        viewModel = viewModel,
                         selectedHealth = state.status,
-                        isError = addState is AddTreeViewModel.AddTreeState.Error && state.status.isBlank(),
-                        onHealthSelected = { viewModel.onEvent(AddTreeViewModel.AddTreeEvent.StatusSelected(it)) },
+                        isError = addState is AddTreeState.Error && state.status.isBlank(),
+                        onHealthSelected = { viewModel.onEvent(AddTreeEvent.StatusChanged(it)) },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -149,38 +173,38 @@ fun AddScreen(
                 // Location
                 OutlinedTextField(
                     value = state.location,
-                    onValueChange = { viewModel.onEvent(AddTreeViewModel.AddTreeEvent.LocationChanged(it)) },
+                    onValueChange = { viewModel.onEvent(AddTreeEvent.LocationChanged(it)) },
                     label = { Text("الموقع") },
                     placeholder = { Text("أدخل موقع الشجرة", textAlign = TextAlign.End) },
                     modifier = Modifier.fillMaxWidth(),
                     textStyle = TextStyle(textDirection = TextDirection.Rtl),
                     shape = RoundedCornerShape(14.dp),
                     singleLine = true,
-                    isError = addState is AddTreeViewModel.AddTreeState.Error && state.location.isBlank()
+                    isError = addState is AddTreeState.Error && state.location.isBlank()
                 )
 
-                // Map Button (Temporary)
+                // Map Button (Real Location)
                 Button(
                     onClick = {
-                        Log.d(TAG, "Setting test coordinates")
-                        // Example coordinates for Riyadh
-                        viewModel.onEvent(AddTreeViewModel.AddTreeEvent.CoordinatesChanged(
-                            latitude = 24.7136,
-                            longitude = 46.6753
-                        ))
+                        Log.d(TAG, "Getting current location")
+                        if (!viewModel.hasLocationPermission()) {
+                            showLocationPermissionDialog = true
+                        } else {
+                            viewModel.getCurrentLocation()
+                        }
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.secondary
                     )
                 ) {
-                    Text("تحديد الموقع على الخريطة")
+                    Text("تحديد موقعي الحالي")
                 }
 
                 // Coordinates (if available)
                 if (state.coordinates != null) {
                     Text(
-                        text = "الإحداثيات: ${state.coordinates?.first}, ${state.coordinates?.second}",
+                        text = "الإحداثيات: ${String.format("%.6f", state.coordinates?.first)}, ${String.format("%.6f", state.coordinates?.second)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -192,7 +216,7 @@ fun AddScreen(
                 Button(
                     onClick = { 
                         Log.d(TAG, "Submit button clicked")
-                        viewModel.onEvent(AddTreeViewModel.AddTreeEvent.Submit) 
+                        viewModel.onEvent(AddTreeEvent.Submit) 
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -201,9 +225,9 @@ fun AddScreen(
                         containerColor = KhadraGreen,
                         contentColor = Color.White
                     ),
-                    enabled = addState !is AddTreeViewModel.AddTreeState.Loading
+                    enabled = addState !is AddTreeState.Loading
                 ) {
-                    if (addState is AddTreeViewModel.AddTreeState.Loading) {
+                    if (addState is AddTreeState.Loading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
                             color = Color.White
@@ -219,7 +243,7 @@ fun AddScreen(
             }
 
             // Loading Overlay
-            if (addState is AddTreeViewModel.AddTreeState.Loading) {
+            if (addState is AddTreeState.Loading) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -246,6 +270,7 @@ fun AddScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ImagePickerSection(
     selectedUri: Uri?,
@@ -309,7 +334,7 @@ fun TreeTypeDropDown(
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val options = listOf("Fruit", "Palm", "Evergreen", "Ornamental", "Vegetable")
+    val options = listOf("Fruit", "Palm", "Vegetable", "Evergreen", "Ornamental")
 
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -354,7 +379,6 @@ fun TreeTypeDropDown(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TreeHealthDropdown(
-    viewModel: AddTreeViewModel,
     selectedHealth: String,
     isError: Boolean,
     onHealthSelected: (String) -> Unit,
