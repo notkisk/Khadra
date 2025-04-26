@@ -6,13 +6,13 @@ import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.storage.Storage
-
+import io.github.jan.supabase.serializer.KotlinXSerializer
 
 object SupabaseClientProvider {
     val client: SupabaseClient by lazy {
         createSupabaseClient(
             supabaseUrl = "https://tonpwdcvihmsxiblnbis.supabase.co",
-            supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRvbnB3ZGN2aWhtc3hpYmxuYmlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNTI0NzcsImV4cCI6MjA2MDgyODQ3N30.EluEB2twOF1hgp0zmzcmEwfVyRQMiARPORBi34F8SbI"
+            supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRvbnB3ZGN2aWhtc3hpYmxuYmlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNTI0NzcsImV4cCI6MjA2MDgyODQ3N30.EluEB2twOF1hgp0zmzcmEwfVyRQMiARPORBi34F8SbI",
         ) {
             install(Postgrest)
             install(Auth)

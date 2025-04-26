@@ -141,7 +141,12 @@ fun MainScreen(
 fun ContentScreen(modifier: Modifier = Modifier, selectedIndex: Int, treeViewModel: TreeViewModel) {
     when (selectedIndex) {
         0 -> ProfileScreen()
-        1 -> MapScreen()
+        1 -> MapScreen(
+            viewModel = treeViewModel,
+            onNavigateToTreeDetails = { tree ->
+                // Handle tree details navigation
+            }
+        )
         2 -> AddScreen(viewModel = hiltViewModel(),{})
         3 -> IrrigationScreen()
         4 -> HomeScreen(modifier,treeViewModel) // Fixed: No infinite recursion

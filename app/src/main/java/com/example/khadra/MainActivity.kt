@@ -28,8 +28,10 @@ class MainActivity : ComponentActivity() {
 
                     MainScreen(
                         treeViewModel,
-                        modifier = Modifier.padding(innerPadding)
-                    )
+
+                        modifier = Modifier.padding(innerPadding),
+
+                        )
                 }
             }
         }

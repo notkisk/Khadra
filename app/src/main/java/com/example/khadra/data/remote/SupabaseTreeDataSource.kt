@@ -1,6 +1,8 @@
 package com.example.khadra.data.remote
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import com.example.khadra.data.model.Tree
 import io.github.jan.supabase.SupabaseClient
@@ -11,6 +13,8 @@ import io.github.jan.supabase.postgrest.exception.PostgrestRestException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import android.util.Log
+import io.github.jan.supabase.postgrest.query.filter.FilterOperator
+import io.ktor.client.utils.EmptyContent.contentType
 import java.io.ByteArrayOutputStream
 import java.util.UUID
 import io.ktor.http.ContentType
@@ -20,7 +24,7 @@ class SupabaseTreeDataSource(
     private val context: Context
 ) {
     init {
-        client.storage // Initialize storage plugin
+        client.storage
     }
 
     companion object {
@@ -52,19 +56,53 @@ class SupabaseTreeDataSource(
     private suspend fun uploadImage(imageUri: Uri): String? = withContext(Dispatchers.IO) {
         try {
             val inputStream = context.contentResolver.openInputStream(imageUri)
-            val bytes = inputStream?.use { input ->
-                ByteArrayOutputStream().use { output ->
-                    input.copyTo(output)
-                    output.toByteArray()
-                }
-            } ?: throw IllegalStateException("Could not read image file")
-
+            
+            val options = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            BitmapFactory.decodeStream(inputStream, null, options)
+            inputStream?.close()
+            
+            val targetSize = 1024 // Target width/height
+            val sampleSize = calculateSampleSize(options.outWidth, options.outHeight, targetSize)
+            
+            val decodingOptions = BitmapFactory.Options().apply {
+                inSampleSize = sampleSize
+            }
+            val newInputStream = context.contentResolver.openInputStream(imageUri)
+            val bitmap = BitmapFactory.decodeStream(newInputStream, null, decodingOptions)
+                ?: throw IllegalStateException("Failed to decode image")
+            newInputStream?.close()
+            
+            val width = bitmap.width
+            val height = bitmap.height
+            val ratio = width.toFloat() / height
+            val (newWidth, newHeight) = if (width > height) {
+                targetSize to (targetSize / ratio).toInt()
+            } else {
+                (targetSize * ratio).toInt() to targetSize
+            }
+            
+            val compressedBitmap = Bitmap.createScaledBitmap(
+                bitmap,
+                newWidth,
+                newHeight,
+                true
+            )
+            
+            val outputStream = ByteArrayOutputStream()
+            compressedBitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
+            val compressedBytes = outputStream.toByteArray()
+            
+            bitmap.recycle()
+            compressedBitmap.recycle()
+            outputStream.close()
+            
             val fileName = "${UUID.randomUUID()}.jpg"
             
-            // Upload the image bytes
             client.storage[BUCKET_NAME].upload(
                 path = fileName,
-                data = bytes,
+                data = compressedBytes,
                 options = {
                     contentType = ContentType.Image.JPEG
                 }
@@ -78,21 +116,27 @@ class SupabaseTreeDataSource(
         }
     }
 
+    private fun calculateSampleSize(width: Int, height: Int, targetSize: Int): Int {
+        var sampleSize = 1
+        while ((width / sampleSize) > targetSize && (height / sampleSize) > targetSize) {
+            sampleSize *= 2
+        }
+        return sampleSize
+    }
+
     suspend fun addTree(tree: Tree, imageUri: Uri?): Tree = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Starting tree addition to Supabase")
             
-            // First upload the image if provided
-            val imageUrl = imageUri?.let { 
+            val imageUrl = imageUri?.let {
                 Log.d(TAG, "Uploading image for tree")
                 uploadImage(it).also { url ->
                     Log.d(TAG, "Image uploaded, URL: $url")
                 }
             }
             
-            // Create tree with image URL
             val treeToInsert = tree.copy(
-                imageUrl = imageUrl // This will be mapped to url_image in Supabase due to @SerialName
+                imageUrl = imageUrl
             )
             
             Log.d(TAG, "Tree data to insert: $treeToInsert")
@@ -114,9 +158,29 @@ class SupabaseTreeDataSource(
         }
     }
 
-    // TODO: Implement updateTree and deleteTree functions using Supabase client
-    suspend fun updateTree(tree: Tree) {
-        // Implementation pending
+    suspend fun updateTree(tree: Tree): Tree = withContext(Dispatchers.IO) {
+        try {
+            val response = client.postgrest[TABLE_NAME]
+                .update(mapOf(
+                    "name" to tree.name,
+                    "type" to tree.type,
+                    "status" to tree.status,
+                    "location" to tree.location,
+                    "coordinates_lat" to tree.coordinatesLat,
+                    "coordinates_lng" to tree.coordinatesLng,
+                    "last_irrigation_action" to tree.lastIrrigationAction,
+                    "image_url" to tree.imageUrl
+                )) {
+                    filter {
+                        eq("id", tree.id)
+                    }
+                }
+
+            tree
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating tree", e)
+            throw e
+        }
     }
 
     suspend fun deleteTree(treeId: String) {

@@ -109,3 +109,11 @@ object DateSerializer : KSerializer<Date> {
         }
     }
 }
+
+data class TreeViewModel(
+    val name: String,
+    val type: String,
+    val imageUri: String? = null,
+    val location: String,
+    val coordinates: Pair<Double, Double>? = null
+)

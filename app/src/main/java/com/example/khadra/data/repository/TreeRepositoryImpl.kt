@@ -12,16 +12,8 @@ class TreeRepositoryImpl @Inject constructor(
     private val supabaseDataSource: SupabaseTreeDataSource
 ) : TreeRepository {
 
-    override suspend fun getTrees(): Flow<List<Tree>> = flow {
-        try {
-            Log.d("TreeRepositoryImpl", "Fetching trees via SupabaseDataSource...")
-            val trees = supabaseDataSource.getTrees()
-            Log.d("TreeRepositoryImpl", "Successfully fetched ${trees.size} trees.")
-            emit(trees)
-        } catch (e: Exception) {
-            Log.e("TreeRepositoryImpl", "Error fetching trees from Supabase: ${e.message}", e)
-            emit(emptyList())
-        }
+    override suspend fun getTrees(): List<Tree> {
+        return supabaseDataSource.getTrees()
     }
 
     override suspend fun addTree(tree: Tree, imageUri: Uri?): Tree {
@@ -37,9 +29,7 @@ class TreeRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateTree(tree: Tree): Tree {
-        // TODO: Implement updateTree using Supabase
-        Log.w("TreeRepositoryImpl", "updateTree not implemented with Supabase yet")
-        return tree
+        return supabaseDataSource.updateTree(tree)
     }
 
     override suspend fun deleteTree(treeId: String) {
