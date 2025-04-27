@@ -11,10 +11,12 @@ import androidx.compose.ui.Modifier
 import com.example.khadra.ui.theme.KhadraTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.khadra.presentation.view.MainScreen
+import com.example.khadra.presentation.view.TreeDetailsScreen
 import com.example.khadra.presentation.viewmodel.TreeViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import dagger.hilt.android.lifecycle.HiltViewModel
-
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -23,15 +25,35 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             KhadraTheme {
+                val navController = rememberNavController()
+                val treeViewModel = viewModel<TreeViewModel>()
+
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    val treeViewModel = viewModel<TreeViewModel>()
-
-                    MainScreen(
-                        treeViewModel,
-
-                        modifier = Modifier.padding(innerPadding),
-
-                        )
+                    NavHost(
+                        navController = navController,
+                        startDestination = "main",
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
+                        composable("main") {
+                            MainScreen(
+                                treeViewModel = treeViewModel,
+                                onNavigateToTreeDetails = { treeId ->
+                                    navController.navigate("tree_details/$treeId")
+                                }
+                            )
+                        }
+                        composable(
+                            route = "tree_details/{treeId}"
+                        ) { backStackEntry ->
+                            val treeId = backStackEntry.arguments?.getString("treeId") ?: return@composable
+                            TreeDetailsScreen(
+                                treeId = treeId,
+                                viewModel = treeViewModel,
+                                onNavigateBack = { navController.popBackStack() },
+                                onEditTree = { /* Handle edit if needed */ }
+                            )
+                        }
+                    }
                 }
             }
         }

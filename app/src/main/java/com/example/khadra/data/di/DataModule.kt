@@ -7,6 +7,7 @@ import com.example.khadra.data.repository.TreeRepository
 import com.example.khadra.data.repository.TreeRepositoryImpl
 import com.example.khadra.data.repository.TreeTypeRepository
 import com.example.khadra.data.repository.TreeTypeRepositoryImpl
+import com.example.khadra.data.source.TreeDataSource
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -27,19 +28,19 @@ object DataModule {
 
     @Provides
     @Singleton
-    fun provideSupabaseTreeDataSource(
+    fun provideTreeDataSource(
         client: SupabaseClient,
         @ApplicationContext context: Context
-    ): SupabaseTreeDataSource {
+    ): TreeDataSource {
         return SupabaseTreeDataSource(client, context)
     }
 
     @Provides
     @Singleton
     fun provideTreeRepository(
-        supabaseDataSource: SupabaseTreeDataSource
+        treeDataSource: TreeDataSource
     ): TreeRepository {
-        return TreeRepositoryImpl(supabaseDataSource)
+        return TreeRepositoryImpl(treeDataSource)
     }
 
     @Provides

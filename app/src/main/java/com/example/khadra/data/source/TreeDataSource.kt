@@ -1,11 +1,11 @@
-package com.example.khadra.data.repository
+package com.example.khadra.data.source
 
 import android.net.Uri
 import com.example.khadra.data.model.IrrigationHistory
 import com.example.khadra.data.model.Location
 import com.example.khadra.data.model.Tree
 
-interface TreeRepository {
+interface TreeDataSource {
     suspend fun getTrees(): List<Tree>
     suspend fun addTree(tree: Tree, imageUri: Uri? = null): Tree
     suspend fun updateTree(tree: Tree): Tree

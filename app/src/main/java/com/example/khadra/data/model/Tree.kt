@@ -17,26 +17,28 @@ import android.util.Log
 
 @Serializable
 data class Tree(
-    val id: String = "",
-    val name: String = "",
-    val type: String = "",
-    val location: String = "",
-    val status: String = "",
+    val id: String,
+    val name: String,
+    val type: String,
+    val status: String,
+    val location: String,
+    @SerialName("coordinates_lat")
+    val coordinatesLat: Double,
+    @SerialName("coordinates_lng")
+    val coordinatesLng: Double,
+    @Serializable(with = DateSerializer::class)
+    @SerialName("last_irrigation_action")
+    val lastIrrigationAction: Date,
     @Serializable(with = DateSerializer::class)
     @SerialName("created_at")
     val createdAt: Date = Date(),
-    @SerialName("coordinates_lat")
-    val coordinatesLat: Double = 0.0,
-    @SerialName("coordinates_lng")
-    val coordinatesLng: Double = 0.0,
+    @Serializable(with = DateSerializer::class)
+    @SerialName("updated_at")
+    val updatedAt: Date = Date(),
     @SerialName("url_image")
     val imageUrl: String? = null,
-    @SerialName("last_irrigation_action")
-    @Serializable(with = DateSerializer::class)
-    val lastIrrigationAction: Date = Date(),
-    @SerialName("updated_at")
-    @Serializable(with = DateSerializer::class)
-    val updatedAt: Date = Date()
+    @SerialName("irrigation_history")
+    val irrigationHistory: List<IrrigationHistory>? = null
 ) {
     val coordinates: Pair<Double, Double>
         get() = Pair(coordinatesLat, coordinatesLng)
@@ -59,9 +61,10 @@ data class Tree(
             coordinates: Pair<Double, Double>,
             location: String,
             imageUrl: String? = null,
-            lastIrrigationAction: Date = Date(),
+            lastIrrigationAction: Date,
             createdAt: Date = Date(),
-            updatedAt: Date = Date()
+            updatedAt: Date = Date(),
+            irrigationHistory: List<IrrigationHistory>? = null
         ): Tree {
             return Tree(
                 id = id,
@@ -71,10 +74,11 @@ data class Tree(
                 coordinatesLat = coordinates.first,
                 coordinatesLng = coordinates.second,
                 location = location,
-                imageUrl = imageUrl,
                 lastIrrigationAction = lastIrrigationAction,
+                imageUrl = imageUrl,
                 createdAt = createdAt,
-                updatedAt = updatedAt
+                updatedAt = updatedAt,
+                irrigationHistory = irrigationHistory
             )
         }
     }
@@ -109,6 +113,8 @@ object DateSerializer : KSerializer<Date> {
         }
     }
 }
+
+
 
 data class TreeViewModel(
     val name: String,

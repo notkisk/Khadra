@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.khadra.data.model.IrrigationHistory
 import com.example.khadra.data.model.Location
 import com.example.khadra.data.model.Tree
 import com.example.khadra.data.repository.TreeRepository
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 import android.location.Geocoder
@@ -111,16 +113,22 @@ class TreeViewModel @Inject constructor(
     fun updateTree(tree: Tree) {
         viewModelScope.launch {
             try {
-                repository.updateTree(tree)
+                _uiState.value = _uiState.value.copy(isLoading = true)
+                val updatedTree = repository.updateTree(tree)
                 _uiState.update { currentState ->
                     currentState.copy(
                         trees = currentState.trees.map { 
-                            if (it.id == tree.id) tree else it 
-                        }
+                            if (it.id == tree.id) updatedTree else it 
+                        },
+                        isLoading = false
                     )
                 }
             } catch (e: Exception) {
                 Log.e("TreeViewModel", "Error updating tree", e)
+                _uiState.value = _uiState.value.copy(
+                    error = "Error updating tree: ${e.message}",
+                    isLoading = false
+                )
             }
         }
     }
@@ -128,10 +136,74 @@ class TreeViewModel @Inject constructor(
     fun loadTrees() {
         viewModelScope.launch {
             try {
+                _uiState.value = _uiState.value.copy(isLoading = true)
                 val trees = repository.getTrees()
-                _uiState.update { it.copy(trees = trees) }
+                _uiState.update { it.copy(
+                    trees = trees,
+                    isLoading = false,
+                    error = null
+                ) }
             } catch (e: Exception) {
                 Log.e("TreeViewModel", "Error loading trees", e)
+                _uiState.value = _uiState.value.copy(
+                    error = "Error loading trees: ${e.message}",
+                    isLoading = false
+                )
+            }
+        }
+    }
+
+    fun addIrrigationHistory(treeId: String, notes: String? = null) {
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(isLoading = true)
+                val irrigationHistory = IrrigationHistory(
+                    treeId = treeId,
+                    irrigationDate = Date(),
+                    notes = notes
+                )
+                val updatedHistory = repository.addIrrigationHistory(irrigationHistory)
+                
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        trees = currentState.trees.map { tree ->
+                            if (tree.id == treeId) {
+                                tree.copy(
+                                    irrigationHistory = (tree.irrigationHistory.orEmpty() + updatedHistory),
+                                    lastIrrigationAction = updatedHistory.irrigationDate,
+                                    status = "healthy",
+                                    updatedAt = Date()
+                                )
+                            } else tree
+                        },
+                        isLoading = false,
+                        error = null
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Error updating irrigation history: ${e.message}",
+                    isLoading = false
+                )
+            }
+        }
+    }
+
+    fun loadTreeIrrigationHistory(treeId: String) {
+        viewModelScope.launch {
+            try {
+                val history = repository.getIrrigationHistory(treeId)
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        trees = currentState.trees.map { tree ->
+                            if (tree.id == treeId) {
+                                tree.copy(irrigationHistory = history)
+                            } else tree
+                        }
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(error = e.message)
             }
         }
     }

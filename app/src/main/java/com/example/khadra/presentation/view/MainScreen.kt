@@ -50,7 +50,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 @Composable
 fun MainScreen(
     treeViewModel: TreeViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateToTreeDetails: (String) -> Unit
 ) {
     val navItemsList = listOf(
         NavItem("Profile", painterResource(R.drawable.ic_outline_person_outline_24)),
@@ -132,30 +133,38 @@ fun MainScreen(
         ContentScreen(
             modifier = Modifier.padding(innerPadding),
             selectedIndex = selectedIndex,
-            treeViewModel = treeViewModel
+            treeViewModel = treeViewModel,
+            onNavigateToTreeDetails = onNavigateToTreeDetails
         )
     }
 }
 
 @Composable
-fun ContentScreen(modifier: Modifier = Modifier, selectedIndex: Int, treeViewModel: TreeViewModel) {
+fun ContentScreen(
+    modifier: Modifier = Modifier,
+    selectedIndex: Int,
+    treeViewModel: TreeViewModel,
+    onNavigateToTreeDetails: (String) -> Unit
+) {
     when (selectedIndex) {
         0 -> ProfileScreen()
         1 -> MapScreen(
             viewModel = treeViewModel,
-            onNavigateToTreeDetails = { tree ->
-                // Handle tree details navigation
-            }
+            onNavigateToTreeDetails = onNavigateToTreeDetails
         )
         2 -> AddScreen(viewModel = hiltViewModel(),{})
         3 -> IrrigationScreen()
-        4 -> HomeScreen(modifier,treeViewModel) // Fixed: No infinite recursion
+        4 -> HomeScreen(modifier,treeViewModel,onNavigateToTreeDetails) // Fixed: No infinite recursion
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(modifier: Modifier, treeViewModel: TreeViewModel) {
+fun HomeScreen(
+    modifier: Modifier,
+    treeViewModel: TreeViewModel,
+    onNavigateToTreeDetails: (String) -> Unit
+) {
     val uiState by treeViewModel.uiState.collectAsState()
     val treesList = uiState.trees
     var searchQuery by remember { mutableStateOf("") }
@@ -235,7 +244,10 @@ fun HomeScreen(modifier: Modifier, treeViewModel: TreeViewModel) {
                 if (searchQuery.isNotEmpty() && filteredTrees.isNotEmpty()) {
                     LazyColumn(modifier = Modifier.fillMaxSize().padding(bottom = 110.dp)) {
                         items(filteredTrees) { tree ->
-                            TreeCard(tree = tree, onCardClick = { selectedTree = it }) // Pass tree and click handler
+                            TreeCard(
+                                tree = tree,
+                                onCardClick = { tree -> onNavigateToTreeDetails(tree.id) }
+                            )
                             Spacer(Modifier.height(12.dp))
                         }
                     }
@@ -248,7 +260,10 @@ fun HomeScreen(modifier: Modifier, treeViewModel: TreeViewModel) {
                 } else {
                     LazyColumn(modifier = Modifier.fillMaxSize().padding(bottom = 110.dp)) {
                         items(treesList) { tree ->
-                            TreeCard(tree = tree, onCardClick = { selectedTree = it }) // Pass tree and click handler
+                            TreeCard(
+                                tree = tree,
+                                onCardClick = { tree -> onNavigateToTreeDetails(tree.id) }
+                            )
                             Spacer(Modifier.height(12.dp))
                         }
                     }

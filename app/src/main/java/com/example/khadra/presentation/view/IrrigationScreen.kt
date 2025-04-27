@@ -176,10 +176,14 @@ fun IrrigationScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        viewModel.updateTree(tree.copy(
+                        val updatedTree = tree.copy(
                             lastIrrigationAction = Date(),
-                            status = "healthy"
-                        ))
+                            status = "healthy",
+                            updatedAt = Date()
+                        )
+                        viewModel.updateTree(updatedTree)
+                        viewModel.addIrrigationHistory(tree.id, "تم ري الشجرة")
+                        viewModel.loadTrees()
                         showDialog = null
                     }
                 ) {

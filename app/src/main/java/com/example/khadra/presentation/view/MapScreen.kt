@@ -25,7 +25,7 @@ import com.google.maps.android.compose.*
 @Composable
 fun MapScreen(
     viewModel: TreeViewModel,
-    onNavigateToTreeDetails: (Tree) -> Unit
+    onNavigateToTreeDetails: (String) -> Unit
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
@@ -95,7 +95,7 @@ fun MapScreen(
                         title = tree.name,
                         snippet = tree.type,
                         onClick = {
-                            onNavigateToTreeDetails(tree)
+                            onNavigateToTreeDetails(tree.id)
                             true
                         }
                     )
