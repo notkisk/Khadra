@@ -7,8 +7,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -41,6 +41,7 @@ fun TreeDetailsScreen(
     val tree = trees.trees.find { it.id == treeId }
     var showEditDialog by remember { mutableStateOf(false) }
     var editedTree by remember { mutableStateOf<Tree?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(treeId) {
         viewModel.loadTrees()
@@ -49,87 +50,139 @@ fun TreeDetailsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(tree?.name ?: "تفاصيل الشجرة", color = Color.White) },
+            TopAppBar(colors = TopAppBarColors(
+                containerColor = KhadraGreen,
+                scrolledContainerColor = Color.Unspecified,
+                navigationIconContentColor = Color.Unspecified,
+                titleContentColor = Color.Unspecified,
+                actionIconContentColor = Color.Unspecified
+            ),
+                title = { Text(tree?.name ?: "") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Filled.ArrowBack, "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { tree?.let { editedTree = it; showEditDialog = true } }) {
-                        Icon(Icons.Default.Edit, "Edit", tint = Color.White)
+                    IconButton(onClick = { editedTree = tree; showEditDialog = true }) {
+                        Icon(Icons.Default.Edit, "Edit")
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = KhadraGreen
-                )
-            )
-        }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.White)
-                .padding(paddingValues)
-        ) {
-            tree?.let { currentTree ->
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    item {
-                        if (currentTree.imageUrl != null) {
-                            AsyncImage(
-                                model = currentTree.imageUrl,
-                                contentDescription = "Tree Image",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(200.dp),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-                    }
-
-                    item {
-                        TreeDetailsCard(tree = currentTree)
-                    }
-
-                    item {
-                        Text(
-                            "موقع الشجرة",
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.padding(vertical = 8.dp)
+                    IconButton(
+                        onClick = { showDeleteDialog = true },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
                         )
-                        TreeLocationMap(
-                            location = LatLng(currentTree.coordinatesLat, currentTree.coordinatesLng),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp)
-                        )
-                    }
-
-                    item {
-                        Text(
-                            "سجل الري",
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
-                    }
-
-                    items(currentTree.irrigationHistory ?: emptyList()) { history ->
-                        IrrigationHistoryItem(history)
+                    ) {
+                        Icon(Icons.Default.Delete, "Delete")
                     }
                 }
-            } ?: run {
-                Text(
-                    "لم يتم العثور على الشجرة",
-                    modifier = Modifier.align(Alignment.Center)
-                )
+            )
+        }
+    ) { padding ->
+        if (tree == null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.White)
+                    .padding(padding)
+            ) {
+                tree?.let { currentTree ->
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        item {
+                            if (currentTree.imageUrl != null) {
+                                AsyncImage(
+                                    model = currentTree.imageUrl,
+                                    contentDescription = "Tree Image",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
+
+                        item {
+                            TreeDetailsCard(tree = currentTree)
+                        }
+
+                        item {
+                            Text(
+                                "موقع الشجرة",
+                                style = MaterialTheme.typography.titleLarge,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                            TreeLocationMap(
+                                location = LatLng(currentTree.coordinatesLat, currentTree.coordinatesLng),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp)
+                            )
+                        }
+
+                        item {
+                            Text(
+                                "سجل الري",
+                                style = MaterialTheme.typography.titleLarge,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+
+                        items(currentTree.irrigationHistory ?: emptyList()) { history ->
+                            IrrigationHistoryItem(history)
+                        }
+                    }
+                } ?: run {
+                    Text(
+                        "لم يتم العثور على الشجرة",
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
             }
         }
+    }
+
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("حذف الشجرة") },
+            text = { Text("هل أنت متأكد من حذف هذه الشجرة؟") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        tree?.let { 
+                            viewModel.deleteTree(it.id) {
+                                showDeleteDialog = false
+                                onNavigateBack()
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("حذف")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("إلغاء")
+                }
+            }
+        )
     }
 
     if (showEditDialog && editedTree != null) {

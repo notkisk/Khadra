@@ -208,6 +208,28 @@ class TreeViewModel @Inject constructor(
         }
     }
 
+    fun deleteTree(treeId: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(isLoading = true)
+                repository.deleteTree(treeId)
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        trees = currentState.trees.filterNot { it.id == treeId },
+                        isLoading = false
+                    )
+                }
+                onSuccess()
+            } catch (e: Exception) {
+                Log.e("TreeViewModel", "Error deleting tree", e)
+                _uiState.value = _uiState.value.copy(
+                    error = "Error deleting tree: ${e.message}",
+                    isLoading = false
+                )
+            }
+        }
+    }
+
     init {
         loadTrees()
     }

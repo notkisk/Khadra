@@ -134,9 +134,22 @@ class SupabaseTreeDataSource @Inject constructor(
 
     override suspend fun addIrrigationHistory(history: IrrigationHistory): IrrigationHistory = withContext(Dispatchers.IO) {
         try {
-            client.postgrest["irrigation_history"]
-                .insert(history)
-                .decodeSingle()
+            Log.d(TAG, "Adding irrigation history: $history")
+            val formattedHistory = mapOf(
+                "tree_id" to history.treeId,
+                "irrigation_date" to dateFormat.format(history.irrigationDate),
+                "notes" to history.notes,
+                "created_at" to dateFormat.format(history.createdAt),
+                "updated_at" to dateFormat.format(history.updatedAt)
+            )
+            
+            val result = client.postgrest["irrigation_history"]
+                .insert(formattedHistory) {
+                    select()
+                }
+                .decodeSingle<IrrigationHistory>()
+            Log.d(TAG, "Irrigation history added successfully: $result")
+            result
         } catch (e: Exception) {
             Log.e(TAG, "Error adding irrigation history to Supabase", e)
             throw e
