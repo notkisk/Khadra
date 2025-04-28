@@ -23,6 +23,11 @@ import java.io.ByteArrayOutputStream
 import java.util.UUID
 import io.ktor.http.ContentType
 import javax.inject.Inject
+import io.github.jan.supabase.postgrest.query.Returning
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 class SupabaseTreeDataSource @Inject constructor(
     private val client: SupabaseClient,
@@ -36,6 +41,9 @@ class SupabaseTreeDataSource @Inject constructor(
         private const val TABLE_NAME = "trees"
         private const val BUCKET_NAME = "tree-images"
         private const val TAG = "SupabaseTreeDataSource"
+        private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
     }
 
     override suspend fun getTrees(): List<Tree> = withContext(Dispatchers.IO) {
@@ -77,13 +85,24 @@ class SupabaseTreeDataSource @Inject constructor(
     override suspend fun updateTree(tree: Tree): Tree = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Updating tree in Supabase: $tree")
-            val updatedTree = client.postgrest[TABLE_NAME]
-                .update(value = tree) {
-                    filter {
-                        eq("id", tree.id)
-                    }
+
+            val updatedTree = client.postgrest[TABLE_NAME].update({
+                set("name", tree.name)
+                set("type", tree.type)
+                set("status", tree.status)
+                set("location", tree.location)
+                set("coordinates_lat", tree.coordinatesLat)
+                set("coordinates_lng", tree.coordinatesLng)
+                set("last_irrigation_action", dateFormat.format(tree.lastIrrigationAction))
+                set("updated_at", dateFormat.format(tree.updatedAt))
+                set("url_image", tree.imageUrl)
+            }) {
+                filter {
+                    eq("id", tree.id)
                 }
-                .decodeSingle<Tree>()
+                select()
+            }.decodeSingle<Tree>()
+
             Log.d(TAG, "Tree updated successfully: $updatedTree")
             updatedTree
         } catch (e: PostgrestRestException) {
