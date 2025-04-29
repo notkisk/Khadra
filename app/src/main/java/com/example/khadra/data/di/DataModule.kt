@@ -3,6 +3,7 @@ package com.example.khadra.data.di
 import android.content.Context
 import com.example.khadra.SupabaseClientProvider
 import com.example.khadra.data.remote.SupabaseTreeDataSource
+import com.example.khadra.data.repository.AuthRepository
 import com.example.khadra.data.repository.TreeRepository
 import com.example.khadra.data.repository.TreeRepositoryImpl
 import com.example.khadra.data.repository.TreeTypeRepository
@@ -22,15 +23,21 @@ object DataModule {
 
     @Provides
     @Singleton
-    fun provideSupabaseClient(): SupabaseClient {
-        return SupabaseClientProvider.client
+    fun provideSupabaseClientProvider(): SupabaseClientProvider {
+        return SupabaseClientProvider()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSupabaseClient(provider: SupabaseClientProvider): SupabaseClient {
+        return provider.client
     }
 
     @Provides
     @Singleton
     fun provideTreeDataSource(
-        client: SupabaseClient,
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
+        client: SupabaseClient
     ): TreeDataSource {
         return SupabaseTreeDataSource(client, context)
     }
@@ -41,6 +48,14 @@ object DataModule {
         treeDataSource: TreeDataSource
     ): TreeRepository {
         return TreeRepositoryImpl(treeDataSource)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAuthRepository(
+        client: SupabaseClient
+    ): AuthRepository {
+        return AuthRepository(client)
     }
 
     @Provides

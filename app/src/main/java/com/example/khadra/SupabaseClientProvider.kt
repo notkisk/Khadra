@@ -1,14 +1,16 @@
 package com.example.khadra
 
 import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.storage.Storage
+import io.github.jan.supabase.auth.Auth
+import javax.inject.Inject
+import javax.inject.Singleton
 
-
-object SupabaseClientProvider {
+@Singleton
+class SupabaseClientProvider @Inject constructor() {
     val client: SupabaseClient by lazy {
         createSupabaseClient(
             supabaseUrl = "https://tonpwdcvihmsxiblnbis.supabase.co",
@@ -19,5 +21,9 @@ object SupabaseClientProvider {
             install(Realtime)
             install(Storage)
         }
+    }
+
+    companion object {
+        private const val BUCKET_NAME = "tree-images"
     }
 }

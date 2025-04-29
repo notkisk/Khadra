@@ -10,37 +10,32 @@ import com.example.khadra.data.model.Location
 import com.example.khadra.data.source.TreeDataSource
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.storage.Storage
+import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.storage.storage
-import io.github.jan.supabase.postgrest.exception.PostgrestRestException
+import io.ktor.http.ContentType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import android.util.Log
-import io.github.jan.supabase.postgrest.query.filter.FilterOperator
-import io.github.jan.supabase.postgrest.query.Order
+import io.github.jan.supabase.exceptions.RestException
 import io.ktor.client.utils.EmptyContent.contentType
 import java.io.ByteArrayOutputStream
 import java.util.UUID
-import io.ktor.http.ContentType
 import javax.inject.Inject
-import io.github.jan.supabase.postgrest.query.Returning
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
+
 class SupabaseTreeDataSource @Inject constructor(
     private val client: SupabaseClient,
     private val context: Context
 ) : TreeDataSource {
-    init {
-        client.storage
-    }
 
     companion object {
+        private const val TAG = "SupabaseTreeDataSource"
         private const val TABLE_NAME = "trees"
         private const val BUCKET_NAME = "tree-images"
-        private const val TAG = "SupabaseTreeDataSource"
         private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
             timeZone = TimeZone.getTimeZone("UTC")
         }
@@ -51,17 +46,12 @@ class SupabaseTreeDataSource @Inject constructor(
             Log.d(TAG, "Fetching trees from Supabase table: $TABLE_NAME")
             val result = client.postgrest[TABLE_NAME].select().decodeList<Tree>()
             Log.d(TAG, "Successfully fetched ${result.size} trees from Supabase")
-            Log.d(TAG, "Sample tree data: ${result.firstOrNull()}")
             result
-        } catch (e: PostgrestRestException) {
-            if (e.message?.contains("row-level security policy") == true) {
-                Log.e(TAG, "RLS is enabled. Please disable RLS for the trees table in Supabase dashboard.", e)
-            }
-            Log.e(TAG, "PostgrestRestException: ${e.message}", e)
+        } catch (e: RestException) {
+            Log.e(TAG, "Error fetching trees from Supabase: ${e.message}", e)
             emptyList()
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching trees from Supabase", e)
-            Log.e(TAG, "Error details: ${e.message}")
             throw e
         }
     }
@@ -86,33 +76,37 @@ class SupabaseTreeDataSource @Inject constructor(
         try {
             Log.d(TAG, "Updating tree in Supabase: $tree")
 
-            val updatedTree = client.postgrest[TABLE_NAME].update({
-                set("name", tree.name)
-                set("type", tree.type)
-                set("status", tree.status)
-                set("location", tree.location)
-                set("coordinates_lat", tree.coordinatesLat)
-                set("coordinates_lng", tree.coordinatesLng)
-                set("last_irrigation_action", dateFormat.format(tree.lastIrrigationAction))
-                set("updated_at", dateFormat.format(tree.updatedAt))
-                set("url_image", tree.imageUrl)
-            }) {
-                filter {
-                    eq("id", tree.id)
+            val updatedTree = client.postgrest[TABLE_NAME]
+                .update(
+                    {
+                        set("name", tree.name)
+                        set("type", tree.type)
+                        set("status", tree.status)
+                        set("location", tree.location)
+                        set("coordinates_lat", tree.coordinatesLat)
+                        set("coordinates_lng", tree.coordinatesLng)
+                        set("last_irrigation_action", dateFormat.format(tree.lastIrrigationAction))
+                        set("updated_at", dateFormat.format(tree.updatedAt))
+                        set("url_image", tree.imageUrl)
+                    }
+                ) {
+                    filter {
+                        eq("id", tree.id)
+                    }
                 }
-                select()
-            }.decodeSingle<Tree>()
+                .decodeSingle<Tree>()
 
             Log.d(TAG, "Tree updated successfully: $updatedTree")
             updatedTree
-        } catch (e: PostgrestRestException) {
-            Log.e(TAG, "PostgrestRestException while updating tree: ${e.message}", e)
+        } catch (e: RestException) {
+            Log.e(TAG, "Error updating tree in Supabase: ${e.message}", e)
             throw e
         } catch (e: Exception) {
-            Log.e(TAG, "Error updating tree in Supabase: ${e.message}", e)
+            Log.e(TAG, "Error updating tree in Supabase", e)
             throw e
         }
     }
+
 
     override suspend fun deleteTree(treeId: String): Unit = withContext(Dispatchers.IO) {
         try {
@@ -127,6 +121,7 @@ class SupabaseTreeDataSource @Inject constructor(
             throw e
         }
     }
+
 
     override suspend fun getCurrentLocation(): Location {
         throw NotImplementedError("getCurrentLocation should be implemented in LocationDataSource")
@@ -172,6 +167,7 @@ class SupabaseTreeDataSource @Inject constructor(
         }
     }
 
+
     private suspend fun uploadImage(imageUri: Uri): String = withContext(Dispatchers.IO) {
         try {
             val inputStream = context.contentResolver.openInputStream(imageUri)
@@ -181,10 +177,7 @@ class SupabaseTreeDataSource @Inject constructor(
             val imageBytes = outputStream.toByteArray()
 
             val fileName = "${UUID.randomUUID()}.jpg"
-            client.storage[BUCKET_NAME].upload(
-                path = fileName,
-                data = imageBytes
-            ) {
+            client.storage[BUCKET_NAME].upload(fileName, imageBytes) {
                 contentType = ContentType.Image.JPEG
             }
 

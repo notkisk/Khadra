@@ -44,6 +44,7 @@ import com.example.khadra.data.model.NavItem
 import com.example.khadra.data.model.Tree
 import com.example.khadra.ui.theme.KhadraGreen
 import com.example.khadra.presentation.viewmodel.TreeViewModel
+import com.example.khadra.presentation.viewmodel.AuthViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 
 
@@ -51,7 +52,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 fun MainScreen(
     treeViewModel: TreeViewModel,
     modifier: Modifier = Modifier,
-    onNavigateToTreeDetails: (String) -> Unit
+    onNavigateToTreeDetails: (String) -> Unit,
+    onNavigateToAuth: () -> Unit
 ) {
     val navItemsList = listOf(
         NavItem("Profile", painterResource(R.drawable.ic_outline_person_outline_24)),
@@ -63,7 +65,7 @@ fun MainScreen(
 
 
 
-    var selectedIndex by remember { mutableIntStateOf(4) } // Default screen is Home
+    var selectedIndex by remember { mutableIntStateOf(4) }
     val mod = modifier.fillMaxWidth()
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -85,22 +87,21 @@ fun MainScreen(
                 NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
                     navItemsList.forEachIndexed { index, item ->
                         if (index == 2) {
-                            // Custom Add Button (Bigger + Colored)
                             NavigationBarItem(
                                 selected = selectedIndex == index,
                                 onClick = { selectedIndex = index },
                                 icon = {
                                     Box(
                                         modifier = Modifier
-                                            .size(70.dp) // Bigger button
-                                            .background(KhadraGreen, shape = CircleShape) // Custom color
-                                            .padding(10.dp) // Adjust padding for better appearance
+                                            .size(70.dp)
+                                            .background(KhadraGreen, shape = CircleShape)
+                                            .padding(10.dp)
                                     ) {
                                         Icon(
                                             item.icon,
                                             contentDescription = item.label,
-                                            modifier = Modifier.size(50.dp), // Bigger icon
-                                            tint = Color.White // White icon for contrast
+                                            modifier = Modifier.size(50.dp),
+                                            tint = Color.White
                                         )
                                     }
                                 },
@@ -111,7 +112,6 @@ fun MainScreen(
                                 )
                             )
                         } else {
-                            // Regular Navigation Item
                             NavigationBarItem(
                                 selected = selectedIndex == index,
                                 onClick = { selectedIndex = index },
@@ -134,7 +134,8 @@ fun MainScreen(
             modifier = Modifier.padding(innerPadding),
             selectedIndex = selectedIndex,
             treeViewModel = treeViewModel,
-            onNavigateToTreeDetails = onNavigateToTreeDetails
+            onNavigateToTreeDetails = onNavigateToTreeDetails,
+            onNavigateToAuth = onNavigateToAuth
         )
     }
 }
@@ -144,10 +145,16 @@ fun ContentScreen(
     modifier: Modifier = Modifier,
     selectedIndex: Int,
     treeViewModel: TreeViewModel,
-    onNavigateToTreeDetails: (String) -> Unit
+    onNavigateToTreeDetails: (String) -> Unit,
+    onNavigateToAuth: () -> Unit
 ) {
+    val authViewModel: AuthViewModel = hiltViewModel()
+
     when (selectedIndex) {
-        0 -> ProfileScreen()
+        0 -> ProfileScreen(
+            viewModel = authViewModel,
+            onNavigateToAuth = onNavigateToAuth
+        )
         1 -> MapScreen(
             viewModel = treeViewModel,
             onNavigateToTreeDetails = onNavigateToTreeDetails
@@ -175,13 +182,11 @@ fun HomeScreen(
                 tree.status.contains(searchQuery, ignoreCase = true)
     }
 
-    // State to track the selected tree
     var selectedTree by remember { mutableStateOf<Tree?>(null) }
 
-    // Show Tree Details Dialog or Screen if a tree is selected
     selectedTree?.let { tree ->
         TreeDetailsDialog(tree = tree) {
-            selectedTree = null // Close the details dialog or screen
+            selectedTree = null
         }
     }
 
@@ -208,7 +213,7 @@ fun HomeScreen(
                     )
                 },
                 colors = TextFieldDefaults.textFieldColors(
-                    containerColor = Color.Transparent, // Transparent for image visibility
+                    containerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Gray,
                     unfocusedIndicatorColor = Color.Gray
                 ),
@@ -226,7 +231,6 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Loading State
             if (uiState.isLoading) {
                 Box(
                     modifier = Modifier
@@ -284,7 +288,6 @@ fun TreeDetailsDialog(tree: Tree, onDismiss: () -> Unit) {
                 Text("Type: ${tree.type}")
                 Text("Location: ${tree.coordinates.first}, ${tree.coordinates.second}")
                 Text("Last Irrigation: ${tree.lastIrrigationAction}")
-                // Add more fields as needed
             }
         },
         confirmButton = {
@@ -401,7 +404,6 @@ fun TreeCard(tree: Tree, onCardClick: (Tree) -> Unit) {
                     }
                 }
 
-                // Space 2 (50%)
                 Box(
                     modifier = Modifier.height(100.dp).fillMaxSize().weight(0.5f)
                 ) {
@@ -426,10 +428,10 @@ fun TreeCard(tree: Tree, onCardClick: (Tree) -> Unit) {
                                 fontWeight = FontWeight.Light
                             )
                             Icon(
-                                painter = painterResource(id = R.drawable.ic_outline_location_on), // Replace with your icon resource
+                                painter = painterResource(id = R.drawable.ic_outline_location_on),
                                 contentDescription = "Example Icon",
                                 modifier = Modifier.size(20.dp),
-                                tint = Color.Gray // Optional: Set icon color
+                                tint = Color.Gray
                             )
                         }
 
@@ -443,22 +445,21 @@ fun TreeCard(tree: Tree, onCardClick: (Tree) -> Unit) {
                             Box(
                                 modifier = Modifier
                                     .size(20.dp)
-                                    .clip(CircleShape).shadow(elevation = 4.dp) // Apply shadow
+                                    .clip(CircleShape).shadow(elevation = 4.dp)
                             ) {
                                 Image(
                                     painter = painterResource(id = R.drawable.guy1),
                                     contentDescription = "Circular Image with Border",
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .clip(CircleShape), // Clip the image to a circular shape
-                                    contentScale = ContentScale.Crop // Ensures the image fills the circle
+                                        .clip(CircleShape),
+                                    contentScale = ContentScale.Crop
                                 )
                             }
                         }
                     }
                 }
 
-                // Space 3 (25%)
                 Box(
                     modifier = Modifier
                         .weight(0.25f)
@@ -487,11 +488,11 @@ fun TreeCard(tree: Tree, onCardClick: (Tree) -> Unit) {
 @Composable
 fun StatusBar(status: String) {
     val color = when (status.lowercase()) {
-        "critical"->Color(0xFFFF0000)// Convert to lowercase for case-insensitive comparison
+        "critical"->Color(0xFFFF0000)
         "low" -> Color(0xFFFF6F00)
         "moderate" -> Color(0xFFFFDD00)
         "healthy" -> KhadraGreen
-        else -> Color.Gray // Default color for unknown status
+        else -> Color.Gray
     }
 
     val progress = when (status.lowercase()) {
@@ -499,7 +500,7 @@ fun StatusBar(status: String) {
         "low" -> 30
         "moderate" -> 45
         "healthy" -> 60
-        else -> 60 // Default color for unknown status
+        else -> 60
     }
 
     Box (contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
@@ -508,14 +509,14 @@ fun StatusBar(status: String) {
             modifier = Modifier
                 .clip(shape = RoundedCornerShape(4.dp))
                 .width(60.dp)
-                .height(10.dp) // Height of the status bar
+                .height(10.dp)
                 .background(Color.White).border(BorderStroke(1.dp, color = Color.Gray))
         ){
             Box(
                 modifier = Modifier
                     .clip(shape = RoundedCornerShape(4.dp))
                     .width(progress.dp)
-                    .height(10.dp) // Height of the status bar
+                    .height(10.dp)
                     .background(color).border(BorderStroke(1.dp, color = Color.Gray))
             )
         }

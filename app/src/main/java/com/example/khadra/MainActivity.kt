@@ -3,54 +3,78 @@ package com.example.khadra
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import com.example.khadra.ui.theme.KhadraTheme
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.khadra.presentation.view.MainScreen
-import com.example.khadra.presentation.view.TreeDetailsScreen
-import com.example.khadra.presentation.viewmodel.TreeViewModel
-import dagger.hilt.android.AndroidEntryPoint
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.khadra.presentation.view.AuthScreen
+import com.example.khadra.presentation.view.MainScreen
+import com.example.khadra.presentation.view.TreeDetailsScreen
+import com.example.khadra.presentation.viewmodel.AuthViewModel
+import com.example.khadra.presentation.viewmodel.TreeViewModel
+import com.example.khadra.ui.theme.KhadraTheme
+import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             KhadraTheme {
-                val navController = rememberNavController()
-                val treeViewModel = viewModel<TreeViewModel>()
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    val navController = rememberNavController()
+                    val authViewModel = hiltViewModel<AuthViewModel>()
+                    val treeViewModel = hiltViewModel<TreeViewModel>()
 
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     NavHost(
                         navController = navController,
-                        startDestination = "main",
-                        modifier = Modifier.padding(innerPadding)
+                        startDestination = "auth"
                     ) {
+                        composable("auth") {
+                            AuthScreen(
+                                onNavigateToMain = {
+                                    navController.navigate("main") {
+                                        popUpTo("auth") { inclusive = true }
+                                    }
+                                },
+                                viewModel = authViewModel
+                            )
+                        }
+
                         composable("main") {
                             MainScreen(
                                 treeViewModel = treeViewModel,
                                 onNavigateToTreeDetails = { treeId ->
                                     navController.navigate("tree_details/$treeId")
+                                },
+                                modifier = Modifier,
+                                onNavigateToAuth = {
+                                    navController.navigate("auth") {
+                                        popUpTo("main") { inclusive = true }
+                                    }
                                 }
                             )
                         }
+
                         composable(
-                            route = "tree_details/{treeId}"
+                            route = "tree_details/{treeId}",
+                            arguments = listOf(navArgument("treeId") { type = NavType.StringType })
                         ) { backStackEntry ->
-                            val treeId = backStackEntry.arguments?.getString("treeId") ?: return@composable
+                            val treeId = backStackEntry.arguments?.getString("treeId")
                             TreeDetailsScreen(
-                                treeId = treeId,
+                                treeId = treeId ?: "",
+                                onNavigateBack = { navController.navigateUp() },
                                 viewModel = treeViewModel,
-                                onNavigateBack = { navController.popBackStack() },
-                                onEditTree = { /* Handle edit if needed */ }
+                                onEditTree = { /* Handle edit navigation */ }
                             )
                         }
                     }

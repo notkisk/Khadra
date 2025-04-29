@@ -24,7 +24,6 @@ import android.location.Geocoder
 import android.os.Build
 import android.location.Address
 import android.util.Log
-import com.example.khadra.data.manager.TreeStatusManager
 
 data class TreeUiState(
     val trees: List<Tree> = emptyList(),
@@ -35,7 +34,6 @@ data class TreeUiState(
 @HiltViewModel
 class TreeViewModel @Inject constructor(
     private val repository: TreeRepository,
-    private val treeStatusManager: TreeStatusManager,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -44,27 +42,6 @@ class TreeViewModel @Inject constructor(
 
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
     private val geocoder = Geocoder(context, Locale("ar"))
-
-    init {
-        loadTrees()
-        observeStatusUpdates()
-    }
-
-    private fun observeStatusUpdates() {
-        viewModelScope.launch {
-            treeStatusManager.statusUpdateFlow.collect { updatedTree ->
-                updatedTree?.let { tree ->
-                    _uiState.update { currentState ->
-                        currentState.copy(
-                            trees = currentState.trees.map { 
-                                if (it.id == tree.id) tree else it 
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    }
 
     fun getCurrentLocation(onLocationReceived: (Location) -> Unit) {
         fusedLocationClient.lastLocation
@@ -251,5 +228,9 @@ class TreeViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    init {
+        loadTrees()
     }
 }
