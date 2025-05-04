@@ -1,8 +1,10 @@
 package com.example.khadra.data.repository
 
 import android.net.Uri
+import android.os.Build
 import android.util.Log
 import android.util.Patterns
+import androidx.annotation.RequiresApi
 import com.example.khadra.data.model.User
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -113,16 +115,13 @@ class AuthRepository @Inject constructor(
             val userId = session.user?.id ?: throw IllegalStateException("No user ID found")
             val fileName = "$userId-${UUID.randomUUID()}.jpg"
 
-            // Upload image to storage
             val imageBytes = imageUri.toByteArray()
             client.storage[BUCKET_NAME].upload(fileName, imageBytes) {
                 contentType = ContentType.Image.JPEG
             }
 
-            // Get public URL
             val publicUrl = client.storage[BUCKET_NAME].publicUrl(fileName)
 
-            // Update user metadata
             client.postgrest["profiles"].update({
                 set("avatar_url", publicUrl)
             }) {
@@ -138,6 +137,7 @@ class AuthRepository @Inject constructor(
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     suspend fun getCurrentUser(): User? {
         return try {
             val session = client.auth.currentSessionOrNull() ?: return null

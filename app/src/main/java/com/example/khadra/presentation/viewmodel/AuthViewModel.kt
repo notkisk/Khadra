@@ -1,6 +1,8 @@
 package com.example.khadra.presentation.viewmodel
 
 import android.net.Uri
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.khadra.data.model.User
@@ -96,6 +98,7 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     private fun getCurrentUser() {
         viewModelScope.launch {
             try {

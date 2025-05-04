@@ -74,7 +74,7 @@ class MainActivity : ComponentActivity() {
                                 treeId = treeId ?: "",
                                 onNavigateBack = { navController.navigateUp() },
                                 viewModel = treeViewModel,
-                                onEditTree = { /* Handle edit navigation */ }
+                                onEditTree = {  }
                             )
                         }
                     }

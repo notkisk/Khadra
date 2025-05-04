@@ -116,7 +116,6 @@ class AddTreeViewModel @Inject constructor(
         viewModelScope.launch {
             val currentState = _uiState.value
             
-            // Validate required fields
             if (currentState.name.isEmpty()) {
                 Log.w(TAG, "Validation failed: Name is empty")
                 _addState.value = AddTreeState.Error("يرجى إدخال اسم الشجرة")
@@ -157,7 +156,6 @@ class AddTreeViewModel @Inject constructor(
                 
                 _addState.value = AddTreeState.Success
                 
-                // Reset UI state after successful submission
                 _uiState.value = AddTreeUiState()
             } catch (e: Exception) {
                 Log.e(TAG, "Error adding tree", e)
